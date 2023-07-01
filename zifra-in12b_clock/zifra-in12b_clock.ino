@@ -16,7 +16,6 @@
 #include <Wire.h>
 #include <ds3231.h>
 
-
 #define DEBUG 1
 
 #if DEBUG
@@ -37,8 +36,7 @@
 #include "pitches.h"
 // notes in the melody:
 int melody[] = {NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3,
-                NOTE_G3, 0,       NOTE_B3, NOTE_C4
-               };
+                NOTE_G3, 0,       NOTE_B3, NOTE_C4};
 
 // note durations: 4 = quarter note, 8 = eighth note, etc.:
 int noteDurations[] = {4, 8, 8, 4, 4, 4, 4, 4};
@@ -56,8 +54,7 @@ byte b = B00000000;
 long utcOffsetInSeconds = 2 * 3600;
 
 char daysOfTheWeek[7][12] = {"Sunday",   "Monday", "Tuesday", "Wednesday",
-                             "Thursday", "Friday", "Saturday"
-                            };
+                             "Thursday", "Friday", "Saturday"};
 
 int val1 = 0;
 int val2 = 0;
@@ -102,7 +99,7 @@ String httpPostJson = "";
 #define COMPILE_YEAR                                                           \
   ((((__DATE__[7] - '0') * 10 + (__DATE__[8] - '0')) * 10 +                    \
     (__DATE__[9] - '0')) *                                                     \
-   10 +                                                                    \
+       10 +                                                                    \
    (__DATE__[10] - '0'))
 #define COMPILE_SHORTYEAR (((__DATE__[9] - '0')) * 10 + (__DATE__[10] - '0'))
 #define COMPILE_MONTH                                                          \
@@ -115,7 +112,7 @@ String httpPostJson = "";
     : __DATE__[2] == 'p' ? 8                                                   \
     : __DATE__[2] == 't' ? 9                                                   \
     : __DATE__[2] == 'v' ? 10                                                  \
-    : 11) +                                               \
+                         : 11) +                                               \
    1)
 #define COMPILE_DAY                                                            \
   ((__DATE__[4] == ' ' ? 0 : __DATE__[4] - '0') * 10 + (__DATE__[5] - '0'))
@@ -324,15 +321,9 @@ int day() {
   int monthDay = ptm->tm_mday;
   return monthDay;
 }
-int hour() {
-  return timeClient.getHours();
-}
-int minute() {
-  return timeClient.getMinutes();
-}
-int second() {
-  return timeClient.getSeconds();
-}
+int hour() { return timeClient.getHours(); }
+int minute() { return timeClient.getMinutes(); }
+int second() { return timeClient.getSeconds(); }
 
 void createDateElements(const char *str) {
   sscanf(str, "%d-%d-%dT%d:%d", &Year, &Month, &Day, &Hour, &Minute);
@@ -342,9 +333,7 @@ void createWeekdaysElements(const char *str, int *arr) {
          &arr[4], &arr[5], &arr[6]);
 }
 
-void SaveConfigCallback() {
-  shouldSaveConfig = true;
-}
+void SaveConfigCallback() { shouldSaveConfig = true; }
 
 void SaveConfig() {
   // save the custom parameters to FS
@@ -545,9 +534,7 @@ void HandleGetConfig() {
   server.sendHeader("Connection", "close");
   server.send(200, "application/json", GetConfig());
 }
-void Handle_wifisetup() {
-  WifiSetup();
-}
+void Handle_wifisetup() { WifiSetup(); }
 void Handle_factoryreset() {
   File configFile = SPIFFS.open("/config.json", "w");
   if (!configFile) {
@@ -567,7 +554,7 @@ void SendConfig() {
           websocketConnection[i] == "/setalarm" ||
           websocketConnection[i] == "/setsystem"
 
-         ) {
+      ) {
         String config = GetConfig();
         webSocket.sendTXT(i, config);
       }
@@ -611,8 +598,8 @@ void Log(String function, String message) {
          i < sizeof websocketConnection / sizeof websocketConnection[0]; i++) {
       if (websocketConnection[i] == "/main") {
         webSocket.sendTXT(i, "{\"log\":{\"timeStamp\":\"" + timeStamp +
-                          "\",\"function\":\"" + function +
-                          "\",\"message\":\"" + message + "\"}}");
+                                 "\",\"function\":\"" + function +
+                                 "\",\"message\":\"" + message + "\"}}");
       }
     }
   }
@@ -690,52 +677,52 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                     size_t length) {
 
   switch (type) {
-    case WStype_DISCONNECTED: {
-        Log("WebSocketEvent", "[" + String(num) + "] Disconnected!");
-        websocketConnection[num] = "";
-        break;
+  case WStype_DISCONNECTED: {
+    Log("WebSocketEvent", "[" + String(num) + "] Disconnected!");
+    websocketConnection[num] = "";
+    break;
+  }
+  case WStype_CONNECTED: {
+    // Merken für was die Connection hergstellt wurde
+    websocketConnection[num] = String((char *)payload);
+
+    // IP der Connection abfragen
+    IPAddress ip = webSocket.remoteIP(num);
+
+    // Logausgabe
+    Log("WebSocketEvent", "[" + String(num) + "] Connected from " +
+                              ip.toString() +
+                              " url: " + websocketConnection[num]);
+
+    // send message to client
+    SendInfo(true);
+    SendConfig();
+    break;
+  }
+  case WStype_TEXT: {
+    if (((char *)payload)[0] == '{') {
+      DynamicJsonDocument json(512);
+
+      deserializeJson(json, payload);
+
+      // Logausgabe
+      Log("WebSocketEvent",
+          "Incomming Json length: " + String(measureJson(json)));
+
+      if (websocketConnection[num] == "/setConfig") {
+        JsonObject object = json.as<JsonObject>();
+        SetConfig(object);
       }
-    case WStype_CONNECTED: {
-        // Merken für was die Connection hergstellt wurde
-        websocketConnection[num] = String((char *)payload);
+    }
+    break;
+  }
+  case WStype_BIN:
+    // Serial.printf("[%u] get binary length: %u\n", num, length);
+    // hexdump(payload, length);
 
-        // IP der Connection abfragen
-        IPAddress ip = webSocket.remoteIP(num);
-
-        // Logausgabe
-        Log("WebSocketEvent", "[" + String(num) + "] Connected from " +
-            ip.toString() +
-            " url: " + websocketConnection[num]);
-
-        // send message to client
-        SendInfo(true);
-        SendConfig();
-        break;
-      }
-    case WStype_TEXT: {
-        if (((char *)payload)[0] == '{') {
-          DynamicJsonDocument json(512);
-
-          deserializeJson(json, payload);
-
-          // Logausgabe
-          Log("WebSocketEvent",
-              "Incomming Json length: " + String(measureJson(json)));
-
-          if (websocketConnection[num] == "/setConfig") {
-            JsonObject object = json.as<JsonObject>();
-            SetConfig(object);
-          }
-        }
-        break;
-      }
-    case WStype_BIN:
-      // Serial.printf("[%u] get binary length: %u\n", num, length);
-      // hexdump(payload, length);
-
-      // send message to client
-      // webSocket.sendBIN(num, payload, length);
-      break;
+    // send message to client
+    // webSocket.sendBIN(num, payload, length);
+    break;
   }
 }
 #pragma endregion
@@ -754,7 +741,7 @@ void playAlarm() {
 void handleAlarm() {
 
   String currentTime =
-    IntFormat(hour()) + ":" + IntFormat(minute()) + ":" + IntFormat(second());
+      IntFormat(hour()) + ":" + IntFormat(minute()) + ":" + IntFormat(second());
   String chekAlarm1Time = alarm1Time + ":00";
   String chekAlarm2Time = alarm2Time + ":00";
   String chekAlarm3Time = alarm3Time + ":00";
@@ -884,9 +871,7 @@ void read_time() {
 
     hours = timeClient.getHours();
     minutes = timeClient.getMinutes();
-  }
-  else
-  {
+  } else {
     DS3231_get(&t);
     hours = t.hour;
     minutes = t.min;
@@ -934,16 +919,16 @@ void show_time() {
 
     if (sleep_start_hour > sleep_finish_hour &&
         timeClient.getHours() * 100 + minutes >=
-        sleep_start_hour * 100 + sleep_start_minute) {
+            sleep_start_hour * 100 + sleep_start_minute) {
       turn_all_off();
     } else if (sleep_start_hour > sleep_finish_hour &&
                timeClient.getHours() * 100 + minutes <=
-               sleep_finish_hour * 100 + sleep_finish_minute) {
+                   sleep_finish_hour * 100 + sleep_finish_minute) {
       turn_all_off();
     } else if (timeClient.getHours() * 100 + minutes >=
-               sleep_start_hour * 100 + sleep_start_minute &&
+                   sleep_start_hour * 100 + sleep_start_minute &&
                timeClient.getHours() * 100 + minutes <=
-               sleep_finish_hour * 100 + sleep_finish_minute) {
+                   sleep_finish_hour * 100 + sleep_finish_minute) {
       turn_all_off();
     } else {
 
@@ -1185,21 +1170,15 @@ void setup() {
 
     delay(1000);
     timeClient.begin();
-  }
-  else
-  {
+  } else {
     // Turn off WiFi
     WiFi.mode(WIFI_OFF);
   }
 
   ticker.add(
-  0, 50, [&](void *) {
-    show_time();
-  }, nullptr, true);
+      0, 50, [&](void *) { show_time(); }, nullptr, true);
   ticker.add(
-  1, 5555, [&](void *) {
-    read_time();
-  }, nullptr, true);
+      1, 5555, [&](void *) { read_time(); }, nullptr, true);
 
   // Initialize the button.
   button.begin();
