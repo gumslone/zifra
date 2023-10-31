@@ -56,12 +56,12 @@ long utcOffsetInSeconds = 2 * 3600;
 char daysOfTheWeek[7][12] = {"Sunday",   "Monday", "Tuesday", "Wednesday",
                              "Thursday", "Friday", "Saturday"};
 
-int val1 = 0;
-int val2 = 0;
-int val3 = 0;
-int val4 = 0;
-int val5 = 0;
-int val6 = 0;
+uint8_t val1 = 0;
+uint8_t val2 = 0;
+uint8_t val3 = 0;
+uint8_t val4 = 0;
+uint8_t val5 = 0;
+uint8_t val6 = 0;
 
 int Year, Month, Day, Hour, Minute, Second;
 
@@ -83,15 +83,6 @@ EasyButton button(BUTTON_PIN, 40, true, true);
 EasyButton up_button(UP_BUTTON_PIN, 10, true, true);
 
 //// HTTP Config
-HTTPClient http;
-String httpGetURL = "";
-bool httpGetActive = false;
-int httpGetFrequency = 900;
-
-String httpPostURL = "";
-bool httpPostActive = false;
-int httpPostFrequency = 900;
-String httpPostJson = "";
 
 #define COMPILE_HOUR (((__TIME__[0] - '0') * 10) + (__TIME__[1] - '0'))
 #define COMPILE_MINUTE (((__TIME__[3] - '0') * 10) + (__TIME__[4] - '0'))
@@ -144,22 +135,23 @@ bool clock_sleep = false;
 String clock_sleep_start = "";
 String clock_sleep_finish = "";
 int clock_delay = 0;
-byte clock_num = 0;
+uint8_t clock_num = 0;
 
-int hours;
-int minutes;
+uint8_t hours;
+uint8_t minutes;
+uint8_t prev_minutes{0};
 
 #define LEAP_YEAR(Y)                                                           \
   ((Y > 0) && !(Y % 4) && ((Y % 100) || !(Y % 400))) // from time-lib
 char const *weekDays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
 // int Year, Month, Day, Hour, Minute, Second ;
-int yy;         // Last 2 digits of the year (ie 2016 would be 16)
-int c;          // Century (ie 2016 would be 20)
-int mTable;     // Month value based on calculation table
+uint8_t yy;         // Last 2 digits of the year (ie 2016 would be 16)
+uint8_t c;          // Century (ie 2016 would be 20)
+uint8_t mTable;     // Month value based on calculation table
 int SummedDate; // Add values combined in prep for Mod7 calc
-int DoW;        // Day of the week value (0-6)
-int leap;       // Leap Year or not
+uint8_t DoW;        // Day of the week value (0-6)
+bool leap;       // Leap Year or not
 int cTable;     // Century value based on calculation table
 
 TickerScheduler ticker(5);
@@ -172,7 +164,7 @@ bool alarm_sound = true;
 // alarm 1
 String alarm1Time = "";
 String alarm1Message = "";
-int alarm1Hour, alarm1Minute;
+uint8_t alarm1Hour, alarm1Minute;
 int alarm1Weekdays[] = {0, 0, 0, 0, 0, 0, 0};
 bool alarm1Fired = false;
 bool alarm1Active = false;
@@ -180,7 +172,7 @@ bool alarm1Active = false;
 // alarm 2
 String alarm2Time = "";
 String alarm2Message = "";
-int alarm2Minute, alarm2Second;
+uint8_t alarm2Minute, alarm2Second;
 int alarm2Weekdays[] = {0, 0, 0, 0, 0, 0, 0};
 bool alarm2Fired = false;
 bool alarm2Active = false;
@@ -188,7 +180,7 @@ bool alarm2Active = false;
 // alarm 3
 String alarm3Time = "";
 String alarm3Message = "";
-int alarm3Minute, alarm3Second;
+uint8_t alarm3Minute, alarm3Second;
 int alarm3Weekdays[] = {0, 0, 0, 0, 0, 0, 0};
 bool alarm3Fired = false;
 bool alarm3Active = false;
@@ -622,27 +614,30 @@ String GetInfo() {
 
   int DoW = dayOfWeek(year(), month(), day());
   String week_day;
-  if (DoW == 0) {
-    week_day = ("Saturday");
+  switch (DoW) {
+  case 0:
+    week_day = "Saturday";
+    break;
+  case 1:
+    week_day = "Sunday";
+    break;
+  case 2:
+    week_day = "Monday";
+    break;
+  case 3:
+    week_day = "Tuesday";
+    break;
+  case 4:
+    week_day = "Wednesday";
+    break;
+  case 5:
+    week_day = "Thursday";
+    break;
+  case 6:
+    week_day = "Friday";
+    break;
   }
-  if (DoW == 1) {
-    week_day = ("Sunday");
-  }
-  if (DoW == 2) {
-    week_day = ("Monday");
-  }
-  if (DoW == 3) {
-    week_day = ("Tuesday");
-  }
-  if (DoW == 4) {
-    week_day = ("Wednesday");
-  }
-  if (DoW == 5) {
-    week_day = ("Thursday");
-  }
-  if (DoW == 6) {
-    week_day = ("Friday");
-  }
+  
   root["weekday"] = week_day;
   String json;
   serializeJson(root, json);
@@ -847,7 +842,6 @@ void show_number(int num, bool dot = false) {
     bitSet(a, 2); // dot pin
   }
   if (num < 8) {
-
     bitSet(b, num); // 0-7 Pins
   } else {
     num = num - 8;
@@ -890,7 +884,6 @@ void read_time() {
     D_print(".");
     D_println(t.sec);
   }
-
   if (clock_12h && hours > 12) {
     hours = hours - 12;
   } else if (clock_12h && hours == 0) {
@@ -898,130 +891,85 @@ void read_time() {
   }
   clock_num = 0;
 }
-void show_time() {
 
-  val1 = hours / 10;
-  val2 = hours % 10;
-  val3 = minutes / 10;
-  val4 = minutes % 10;
-  // val5 = timeClient.getSeconds() / 10; // seconds not used
-  // val6 = timeClient.getSeconds() % 10; // seconds not uused
-  handleAlarm();
-
-  if (clock_sleep_start != "" && clock_sleep_finish != "" &&
-      clock_sleep == true) {
-
-    int sleep_start_hour = clock_sleep_start.substring(0, 2).toInt();
-    int sleep_start_minute = clock_sleep_start.substring(3, 5).toInt();
-
-    int sleep_finish_hour = clock_sleep_finish.substring(0, 2).toInt();
-    int sleep_finish_minute = clock_sleep_finish.substring(3, 5).toInt();
-
-    if (sleep_start_hour > sleep_finish_hour &&
-        timeClient.getHours() * 100 + minutes >=
-            sleep_start_hour * 100 + sleep_start_minute) {
-      turn_all_off();
-    } else if (sleep_start_hour > sleep_finish_hour &&
-               timeClient.getHours() * 100 + minutes <=
-                   sleep_finish_hour * 100 + sleep_finish_minute) {
-      turn_all_off();
-    } else if (timeClient.getHours() * 100 + minutes >=
-                   sleep_start_hour * 100 + sleep_start_minute &&
-               timeClient.getHours() * 100 + minutes <=
-                   sleep_finish_hour * 100 + sleep_finish_minute) {
-      turn_all_off();
-    } else {
-
-      if ((clock_leading_hour_zero == false && val1 != 0) ||
-          clock_leading_hour_zero == true) {
-        if (clock_num == 0) {
-          show_number(val1, false);
-          clock_num++;
-          clock_delay = millis();
-        }
-        // 100 delay
-        if (clock_num == 1 and millis() - clock_delay > 800) {
-          turn_all_off();
-          clock_num++;
-        }
-      } else {
-        clock_num = 2;
-        clock_delay = millis() - 1000;
-      }
-
-      if (millis() - clock_delay > 1000 and clock_num == 2) {
-        show_number(val2, false);
-        clock_num++;
-      }
-      if (clock_num == 3 and millis() - clock_delay > 1800) {
-        turn_all_off();
-        clock_num++;
-      }
-
-      if (millis() - clock_delay > 2500 and clock_num == 4) {
-        show_number(val3, true);
-        clock_num++;
-      }
-      if (clock_num == 5 and millis() - clock_delay > 3300) {
-        turn_all_off();
-        clock_num++;
-      }
-
-      if (millis() - clock_delay > 3500 and clock_num == 6) {
-        show_number(val4, true);
-        clock_num++;
-      }
-      if (clock_num == 7 and millis() - clock_delay > 4300) {
-        turn_all_off();
-        clock_num++;
-      }
-    }
-
-  } else {
-
+void time2nixie()
+{
+    uint16_t l_millis = millis();
     if ((clock_leading_hour_zero == false && val1 != 0) ||
         clock_leading_hour_zero == true) {
       if (clock_num == 0) {
         show_number(val1, false);
         clock_num++;
-        clock_delay = millis();
+        clock_delay = l_millis;
       }
       // 100 delay
-      if (clock_num == 1 and millis() - clock_delay > 800) {
+      if (clock_num == 1 and l_millis - clock_delay > 800) {
         turn_all_off();
         clock_num++;
       }
     } else {
       clock_num = 2;
-      clock_delay = millis() - 1000;
+      clock_delay = l_millis - 1000;
     }
 
-    if (millis() - clock_delay > 1000 and clock_num == 2) {
+    if (clock_num == 2 && l_millis - clock_delay > 1000) {
       show_number(val2, false);
       clock_num++;
     }
-    if (clock_num == 3 and millis() - clock_delay > 1800) {
+    if (clock_num == 3 and l_millis - clock_delay > 1800) {
       turn_all_off();
       clock_num++;
     }
-
-    if (millis() - clock_delay > 2500 and clock_num == 4) {
+    if (clock_num == 4 and l_millis - clock_delay > 2500 ) {
       show_number(val3, true);
       clock_num++;
     }
-    if (clock_num == 5 and millis() - clock_delay > 3300) {
+    if (clock_num == 5 and l_millis - clock_delay > 3300) {
       turn_all_off();
       clock_num++;
     }
-
-    if (millis() - clock_delay > 3500 and clock_num == 6) {
+    if (clock_num == 6 && l_millis - clock_delay > 3500) {
       show_number(val4, true);
       clock_num++;
     }
-    if (clock_num == 7 and millis() - clock_delay > 4300) {
+    if (clock_num == 7 and l_millis - clock_delay > 4300) {
       turn_all_off();
       clock_num++;
     }
+}
+
+void show_time() {
+  
+  val1 = hours / 10;
+  val2 = hours % 10;
+  val3 = minutes / 10;
+  val4 = minutes % 10;
+  // val5 = timeClient.getSeconds() / 10; // seconds not used
+  // val6 = timeClient.getSeconds() % 10; // seconds not used
+  handleAlarm();
+
+  bool clockSleep = false;
+  if (clock_sleep_start != "" && clock_sleep_finish != "" &&
+      clock_sleep == true) {
+
+    uint8_t sleep_start_hour = clock_sleep_start.substring(0, 2).toInt();
+    uint8_t sleep_start_minute = clock_sleep_start.substring(3, 5).toInt();
+
+    uint8_t sleep_finish_hour = clock_sleep_finish.substring(0, 2).toInt();
+    uint8_t sleep_finish_minute = clock_sleep_finish.substring(3, 5).toInt();
+    uint16_t current_hours_with_minutes = timeClient.getHours()  * 100 + minutes;
+    uint16_t start_hours_with_minutes = sleep_start_hour * 100 + sleep_start_minute;
+    uint16_t end_hours_with_minutes = sleep_finish_hour * 100 + sleep_finish_minute;
+  
+    clockSleep = (sleep_start_hour > sleep_finish_hour && 
+    (current_hours_with_minutes >= start_hours_with_minutes || current_hours_with_minutes <= end_hours_with_minutes))
+    || (current_hours_with_minutes >= start_hours_with_minutes && current_hours_with_minutes <= end_hours_with_minutes);
+  }
+  if(clockSleep)
+  {
+    turn_all_off();
+  } else {
+    time2nixie();
   }
 }
 // end clock
@@ -1124,7 +1072,7 @@ void setup() {
   // Mounting FileSystem
   D_println(F("Mounting file system..."));
   if (SPIFFS.begin()) {
-    D_println(F("Mounted file system."));
+    D_println(F("Successfully mounted file system."));
     LoadConfig();
   } else {
     D_println(F("Failed to mount FS"));
@@ -1176,9 +1124,9 @@ void setup() {
   }
 
   ticker.add(
-      0, 50, [&](void *) { show_time(); }, nullptr, true);
+      0, 100, [&](void *) { show_time(); }, nullptr, true);
   ticker.add(
-      1, 5555, [&](void *) { read_time(); }, nullptr, true);
+      1, 5500, [&](void *) { read_time(); }, nullptr, true);
 
   // Initialize the button.
   button.begin();
@@ -1201,7 +1149,7 @@ void loop() {
   button.read();
   up_button.read();
   yield();
-  if (wifiActive == true) {
+  if (wifiActive) {
     MDNS.update();
     server.handleClient();
     yield();
