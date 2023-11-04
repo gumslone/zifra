@@ -14,3 +14,6 @@ a single digit nixie tube clock <a href="https://www.youtube.com/watch?v=p9QBpXv
 - update the clock to the latest firmware through the web interface
 
 <img src="https://github.com/gumslone/zifra/blob/main/images/web.png?raw=true" width="500">
+<img src="https://github.com/gumslone/zifra/blob/main/images/time.png?raw=true" width="500">
+<img src="https://github.com/gumslone/zifra/blob/main/images/alarm.png?raw=true" width="500">
+<img src="https://github.com/gumslone/zifra/blob/main/images/update.png?raw=true" width="500">
