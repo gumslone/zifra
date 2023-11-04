@@ -12,3 +12,5 @@ a single digit nixie tube clock <a href="https://www.youtube.com/watch?v=p9QBpXv
 - set a sleep time to turn of the nixie tube at night (shake to show time for a duration of 3 minutes during sleep time)
 - configuration web interface that can be accessed via web browser http://zifra.local
 - update the clock to the latest firmware through the web interface
+
+<img src="https://github.com/gumslone/zifra/blob/main/images/web.png?raw=true" width="500">
