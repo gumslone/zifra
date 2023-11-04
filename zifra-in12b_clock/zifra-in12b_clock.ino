@@ -81,7 +81,7 @@ EasyButton button(BUTTON_PIN, 40, true, true);
 
 #define UP_BUTTON_PIN 5
 EasyButton up_button(UP_BUTTON_PIN, 10, true, true);
-
+unsigned long sleep_shake_time = 0;
 //// HTTP Config
 
 #define COMPILE_HOUR (((__TIME__[0] - '0') * 10) + (__TIME__[1] - '0'))
@@ -134,25 +134,17 @@ bool clock_12h = false;              // 24h by default
 bool clock_sleep = false;
 String clock_sleep_start = "";
 String clock_sleep_finish = "";
-int clock_delay = 0;
+unsigned long clock_delay = 0;
 uint8_t clock_num = 0;
 
 uint8_t hours;
 uint8_t minutes;
-uint8_t prev_minutes{0};
 
 #define LEAP_YEAR(Y)                                                           \
   ((Y > 0) && !(Y % 4) && ((Y % 100) || !(Y % 400))) // from time-lib
 char const *weekDays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 
 // int Year, Month, Day, Hour, Minute, Second ;
-uint8_t yy;         // Last 2 digits of the year (ie 2016 would be 16)
-uint8_t c;          // Century (ie 2016 would be 20)
-uint8_t mTable;     // Month value based on calculation table
-int SummedDate; // Add values combined in prep for Mod7 calc
-uint8_t DoW;        // Day of the week value (0-6)
-bool leap;       // Leap Year or not
-int cTable;     // Century value based on calculation table
 
 TickerScheduler ticker(5);
 
@@ -196,94 +188,6 @@ void doFactoryReset() {
   D_println(F("15 Seconds Long Click"));
   Handle_factoryreset();
 }
-//================================================================================
-// Begin calcdayofweek( D, M, Y)
-//================================================================================
-int dayOfWeek(int yyyy, int m, int d) {
-
-  // Leap Year Calculation
-  if ((fmod(yyyy, 4) == 0 && fmod(yyyy, 100) != 0) || (fmod(yyyy, 400) == 0)) {
-    leap = 1;
-  } else {
-    leap = 0;
-  }
-
-  // Limit results to year 1900-2299 (to save memory)
-  while (yyyy > 2299) {
-    yyyy = yyyy - 400;
-  }
-  while (yyyy < 1900) {
-    yyyy = yyyy + 400;
-  }
-
-  // Calculating century
-  c = yyyy / 100;
-
-  // Calculating two digit year
-  yy = fmod(yyyy, 100);
-
-  // Century value based on Table
-  if (c == 19) {
-    cTable = 1;
-  }
-  if (c == 20) {
-    cTable = 0;
-  }
-  if (c == 21) {
-    cTable = 5;
-  }
-  if (c == 22) {
-    cTable = 3;
-  }
-
-  // Jan and Feb calculations affected by leap years
-  if (m == 1) {
-    if (leap == 1) {
-      mTable = 6;
-    } else {
-      mTable = 0;
-    }
-  }
-  if (m == 2) {
-    if (leap == 1) {
-      mTable = 2;
-    } else {
-      mTable = 3;
-    }
-  }
-  // Other months not affected and have set values
-  if (m == 10) {
-    mTable = 0;
-  }
-  if (m == 8) {
-    mTable = 2;
-  }
-  if (m == 3 || m == 11) {
-    mTable = 3;
-  }
-  if (m == 4 || m == 7) {
-    mTable = 6;
-  }
-  if (m == 5) {
-    mTable = 1;
-  }
-  if (m == 6) {
-    mTable = 4;
-  }
-  if (m == 9 || m == 12) {
-    mTable = 5;
-  }
-
-  // Enter the data into the formula
-  SummedDate = d + mTable + yy + (yy / 4) + cTable;
-
-  // Find remainder
-  DoW = fmod(SummedDate, 7);
-  return DoW;
-}
-//================================================================================
-// End calcdayofweek( D, M, Y)
-//================================================================================
 
 /////////////////////////////////////////////////////////////////////
 int year() {
@@ -780,6 +684,7 @@ void singleClick() {
   Log(F("singleClick"), F("singleClick!"));
 }
 void upClick() {
+  sleep_shake_time = millis();
   handleMuteAlarms();
   tone(4, NOTE_C4, 1000 / 16);
   // stop the tone playing:
@@ -894,7 +799,7 @@ void read_time() {
 
 void time2nixie()
 {
-    uint16_t l_millis = millis();
+    unsigned long l_millis = millis();
     if ((clock_leading_hour_zero == false && val1 != 0) ||
         clock_leading_hour_zero == true) {
       if (clock_num == 0) {
@@ -916,23 +821,23 @@ void time2nixie()
       show_number(val2, false);
       clock_num++;
     }
-    if (clock_num == 3 and l_millis - clock_delay > 1800) {
+    else if (clock_num == 3 and l_millis - clock_delay > 1800) {
       turn_all_off();
       clock_num++;
     }
-    if (clock_num == 4 and l_millis - clock_delay > 2500 ) {
+    else if (clock_num == 4 and l_millis - clock_delay > 2500 ) {
       show_number(val3, true);
       clock_num++;
     }
-    if (clock_num == 5 and l_millis - clock_delay > 3300) {
+    else if (clock_num == 5 and l_millis - clock_delay > 3300) {
       turn_all_off();
       clock_num++;
     }
-    if (clock_num == 6 && l_millis - clock_delay > 3500) {
+    else if (clock_num == 6 && l_millis - clock_delay > 3500) {
       show_number(val4, true);
       clock_num++;
     }
-    if (clock_num == 7 and l_millis - clock_delay > 4300) {
+    else if (clock_num == 7 and l_millis - clock_delay > 4300) {
       turn_all_off();
       clock_num++;
     }
@@ -948,7 +853,7 @@ void show_time() {
   // val6 = timeClient.getSeconds() % 10; // seconds not used
   handleAlarm();
 
-  bool clockSleep = false;
+  bool doSleep = (millis() - sleep_shake_time) > 1000 * 60 * 3; //  3 minutes shake wakeup
   if (clock_sleep_start != "" && clock_sleep_finish != "" &&
       clock_sleep == true) {
 
@@ -961,11 +866,11 @@ void show_time() {
     uint16_t start_hours_with_minutes = sleep_start_hour * 100 + sleep_start_minute;
     uint16_t end_hours_with_minutes = sleep_finish_hour * 100 + sleep_finish_minute;
   
-    clockSleep = (sleep_start_hour > sleep_finish_hour && 
+    doSleep = (sleep_start_hour > sleep_finish_hour && 
     (current_hours_with_minutes >= start_hours_with_minutes || current_hours_with_minutes <= end_hours_with_minutes))
     || (current_hours_with_minutes >= start_hours_with_minutes && current_hours_with_minutes <= end_hours_with_minutes);
   }
-  if(clockSleep)
+  if(doSleep)
   {
     turn_all_off();
   } else {
