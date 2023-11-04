@@ -155,7 +155,6 @@ bool wifiActive = true;
 bool alarm_sound = true;
 // alarm 1
 String alarm1Time = "";
-String alarm1Message = "";
 uint8_t alarm1Hour, alarm1Minute;
 int alarm1Weekdays[] = {0, 0, 0, 0, 0, 0, 0};
 bool alarm1Fired = false;
@@ -163,7 +162,6 @@ bool alarm1Active = false;
 
 // alarm 2
 String alarm2Time = "";
-String alarm2Message = "";
 uint8_t alarm2Minute, alarm2Second;
 int alarm2Weekdays[] = {0, 0, 0, 0, 0, 0, 0};
 bool alarm2Fired = false;
@@ -171,7 +169,6 @@ bool alarm2Active = false;
 
 // alarm 3
 String alarm3Time = "";
-String alarm3Message = "";
 uint8_t alarm3Minute, alarm3Second;
 int alarm3Weekdays[] = {0, 0, 0, 0, 0, 0, 0};
 bool alarm3Fired = false;
@@ -262,10 +259,6 @@ void SaveConfig() {
     json["alarm2Time"] = alarm2Time;
     json["alarm3Time"] = alarm3Time;
 
-    json["alarm1Message"] = alarm1Message;
-    json["alarm2Message"] = alarm2Message;
-    json["alarm3Message"] = alarm3Message;
-
     json["wifiActive"] = wifiActive;
 
     File configFile = SPIFFS.open("/config.json", "w");
@@ -322,9 +315,6 @@ void setConfigParameters(JsonObject &json) {
   if (json.containsKey("alarm1Time")) {
     alarm1Time = json["alarm1Time"].as<String>();
   }
-  if (json.containsKey("alarm1Message")) {
-    alarm1Message = json["alarm1Message"].as<String>();
-  }
 
   if (json.containsKey("alarm2Weekdays")) {
     createWeekdaysElements(json["alarm2Weekdays"], alarm2Weekdays);
@@ -335,9 +325,6 @@ void setConfigParameters(JsonObject &json) {
   if (json.containsKey("alarm2Time")) {
     alarm2Time = json["alarm2Time"].as<String>();
   }
-  if (json.containsKey("alarm2Message")) {
-    alarm2Message = json["alarm2Message"].as<String>();
-  }
 
   if (json.containsKey("alarm3Weekdays")) {
     createWeekdaysElements(json["alarm3Weekdays"], alarm3Weekdays);
@@ -347,9 +334,6 @@ void setConfigParameters(JsonObject &json) {
   }
   if (json.containsKey("alarm3Time")) {
     alarm3Time = json["alarm3Time"].as<String>();
-  }
-  if (json.containsKey("alarm3Message")) {
-    alarm3Message = json["alarm3Message"].as<String>();
   }
 
   if (json.containsKey("wifiActive")) {
@@ -649,17 +633,14 @@ void handleAlarm() {
       alarm1Weekdays[NumDayOfWeek] == 1) {
     alarm1Fired = true;
     D_println(F("ALARM 1!"));
-    Log(F("handleAlarm"), (alarm1Message));
   } else if (chekAlarm2Time == currentTime && alarm2Active == true &&
              alarm2Weekdays[NumDayOfWeek] == 1) {
     alarm2Fired = true;
     D_println(F("ALARM 2!"));
-    Log(F("handleAlarm"), (alarm2Message));
   } else if (chekAlarm3Time == currentTime && alarm3Active == true &&
              alarm3Weekdays[NumDayOfWeek] == 1) {
     alarm3Fired = true;
     D_println(F("ALARM 3!"));
-    Log(F("handleAlarm"), (alarm3Message));
   }
 
   playAlarm();
