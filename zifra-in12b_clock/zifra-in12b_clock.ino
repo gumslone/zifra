@@ -833,10 +833,10 @@ void show_time() {
   // val5 = timeClient.getSeconds() / 10; // seconds not used
   // val6 = timeClient.getSeconds() % 10; // seconds not used
   handleAlarm();
-
-  bool doSleep = (millis() - sleep_shake_time) > 1000 * 60 * 3; //  3 minutes shake wakeup
+  bool shakeWakeUp = ((millis() - sleep_shake_time) <= 1000 * 60 * 3) && sleep_shake_time > 0;  //  3 minutes shake wakeup
+  bool doSleep = false;
   if (clock_sleep_start != "" && clock_sleep_finish != "" &&
-      clock_sleep == true) {
+      clock_sleep == true && shakeWakeUp == false) {
 
     uint8_t sleep_start_hour = clock_sleep_start.substring(0, 2).toInt();
     uint8_t sleep_start_minute = clock_sleep_start.substring(3, 5).toInt();
@@ -851,6 +851,7 @@ void show_time() {
     (current_hours_with_minutes >= start_hours_with_minutes || current_hours_with_minutes <= end_hours_with_minutes))
     || (current_hours_with_minutes >= start_hours_with_minutes && current_hours_with_minutes <= end_hours_with_minutes);
   }
+
   if(doSleep)
   {
     turn_all_off();
