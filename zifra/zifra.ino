@@ -48,16 +48,12 @@ int address = 0x20;
 byte a = B00000000;
 byte b = B00000000;
 
-char daysOfTheWeek[7][12] = {"Sunday",   "Monday", "Tuesday", "Wednesday",
-                             "Thursday", "Friday", "Saturday"
-                            };
-
 // Define NTP Client to get time
 WiFiUDP ntpUDP;
 Zifra zifra(ntpUDP);
 
 // dns
-const byte DNS_PORT = 53;
+const uint8_t DNS_PORT = 53;
 IPAddress apIP(192, 168, 4, 1);
 char cmDNS[33];
 String escapedMac;
@@ -463,14 +459,8 @@ void turn_all_off() {
 }
 
 void turn_on() {
-  byte c, d;
-  c = a;
-  d = b;
   // turn on
-  for (int i = 0; i < 50; i++) {
-    // Set port on
-    pf575_write(word(c, d));
-  }
+  pf575_write(word(a, b));
 }
 
 void show_number(int num, bool dot = false) {

@@ -4,7 +4,7 @@
 class WebTime: public NTPClient {
   public:
     using NTPClient::NTPClient;
-    int getYear() {
+    uint16_t getYear() {
       unsigned long epochTime = getEpochTime();
 
       // Get a time structure
@@ -58,7 +58,7 @@ class RtcTime {
     uint8_t getMonth() {
       return m_rtcTime.mon + 1;
     }
-    int getYear() {
+    uint16_t getYear() {
       return 1900 + m_rtcTime.year;
     }
     void update()
@@ -120,7 +120,7 @@ class CurrentTime {
     {
       return m_month;
     }
-    int getYear()
+    uint16_t getYear()
     {
       return m_year;
     }
@@ -202,7 +202,7 @@ class CurrentTime {
     uint8_t m_seconds{0};
     uint8_t m_day{0};
     uint8_t m_month{0};;
-    int m_year{0};
+    uint16_t m_year{0};
     ZifraConfig & m_conf;
     WebTime m_webTime;
     RtcTime m_rtc;
