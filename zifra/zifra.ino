@@ -98,7 +98,7 @@ const String version = String(COMPILE_SHORTYEAR) + IntFormat(COMPILE_MONTH) +
 WiFiClient espClient;
 WiFiManager wifiManager;
 ESP8266WebServer server(80);
-WebSocketsServer webSocket = WebSocketsServer(81);
+WebSocketsServer webSocket(81);
 ESP8266HTTPUpdateServer httpUpdater;
 
 String OldInfo = ""; // old board info
@@ -179,7 +179,7 @@ void SendConfig() {
 void Log(String function, String message) {
 
   const String timeStamp = IntFormat(zifra.time.getYear()) + "-" + IntFormat(zifra.time.getMonth()) + "-" +
-                           IntFormat(zifra.time.getDay()) + "T" + IntFormat(zifra.time.getHoursIso()) + ":" +
+                           IntFormat(zifra.time.getMonthDay()) + "T" + IntFormat(zifra.time.getHoursIso()) + ":" +
                            IntFormat(zifra.time.getMinutes()) + ":" + IntFormat(zifra.time.getSeconds());
 
   D_println("[" + timeStamp + "] " + function + ": " + message);
@@ -212,34 +212,34 @@ String GetInfo() {
   root["cpuFreqMHz"] = ESP.getCpuFreqMHz();
   root["clock_sleep"] = zifra.conf.clock.sleep;
 
-  const int DoW = dayOfWeek(zifra.time.getYear(), zifra.time.getMonth(), zifra.time.getDay());
   String week_day;
-  switch (DoW) {
+  const uint8_t weekDay = zifra.time.getWeekDay();
+  switch (weekDay) {
     case 0:
-      week_day = "Saturday";
-      break;
-    case 1:
       week_day = "Sunday";
       break;
-    case 2:
+    case 1:
       week_day = "Monday";
       break;
-    case 3:
+    case 2:
       week_day = "Tuesday";
       break;
-    case 4:
+    case 3:
       week_day = "Wednesday";
       break;
-    case 5:
+    case 4:
       week_day = "Thursday";
       break;
-    case 6:
+    case 5:
       week_day = "Friday";
+      break;
+    case 6:
+      week_day = "Saturday";
       break;
 
   }
 
-  root["weekday"] = week_day + "(" + String(DoW) + ")";
+  root["weekday"] = week_day + "(" + String(weekDay) + ")";
   String json;
   serializeJson(root, json);
 

@@ -25,21 +25,21 @@ class ZifraAlarm {
     bool m_alarmSound{false};
 
     void activateAlarm() {
-      String currentTime =
+      const String currentTime =
         IntFormat(m_time.getHoursIso()) + ":" + IntFormat(m_time.getMinutes());
-      uint8_t NumDayOfWeek = dayOfWeek(m_time.getYear(), m_time.getMonth(), m_time.getDay());
-      if (m_conf.alarm1.active && !m_conf.alarm1.fired && m_conf.alarm1.time == currentTime && m_time.getSeconds() <= 5 &&
-          m_conf.alarm1.weekdays[NumDayOfWeek] == 1) {
+      const uint8_t weekDay = m_time.getWeekDay();
+      if (m_conf.alarm1.active && !m_conf.alarm1.fired && m_conf.alarm1.time == currentTime && m_time.getSeconds() < 10 &&
+          m_conf.alarm1.weekdays[weekDay] == 1) {
         m_conf.alarm1.fired = true;
         m_conf.alarm1.fireTime = millis();
         D_println(F("ALARM 1!"));
-      } else if (m_conf.alarm2.active && !m_conf.alarm2.fired && m_conf.alarm2.time == currentTime && m_time.getSeconds() <= 5 &&
-                 m_conf.alarm2.weekdays[NumDayOfWeek] == 1) {
+      } else if (m_conf.alarm2.active && !m_conf.alarm2.fired && m_conf.alarm2.time == currentTime && m_time.getSeconds() < 10 &&
+                 m_conf.alarm2.weekdays[weekDay] == 1) {
         m_conf.alarm2.fired = true;
         m_conf.alarm2.fireTime = millis();
         D_println(F("ALARM 2!"));
-      } else if (m_conf.alarm3.active && !m_conf.alarm3.fired && m_conf.alarm3.time == currentTime && m_time.getSeconds() <= 5 &&
-                 m_conf.alarm3.weekdays[NumDayOfWeek] == 1) {
+      } else if (m_conf.alarm3.active && !m_conf.alarm3.fired && m_conf.alarm3.time == currentTime && m_time.getSeconds() < 10 &&
+                 m_conf.alarm3.weekdays[weekDay] == 1) {
         m_conf.alarm3.fired = true;
         m_conf.alarm3.fireTime = millis();
         D_println(F("ALARM 3!"));

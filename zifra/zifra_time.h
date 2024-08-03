@@ -12,7 +12,7 @@ class WebTime: public NTPClient {
       // Get a time structure
       struct tm *ptm = gmtime((time_t *)&epochTime);
 
-      int currentYear = ptm->tm_year + 1900;
+      uint16_t currentYear = ptm->tm_year + 1900;
       return currentYear;
     }
     uint8_t getMonth()
@@ -25,7 +25,7 @@ class WebTime: public NTPClient {
       uint8_t currentMonth = ptm->tm_mon + 1;
       return currentMonth;
     }
-    uint8_t getDay()
+    uint8_t getMonthDay()
     {
       unsigned long epochTime = getEpochTime();
 
@@ -35,7 +35,6 @@ class WebTime: public NTPClient {
       uint8_t monthDay = ptm->tm_mday;
       return monthDay;
     }
-
 };
 class RtcTime {
   public:
@@ -54,8 +53,11 @@ class RtcTime {
     uint8_t getSeconds() {
       return m_rtcTime.sec;
     }
-    uint8_t getDay() {
+    uint8_t getMonthDay() {
       return m_rtcTime.mday;
+    }
+    uint8_t getDay() {
+      return m_rtcTime.wday;
     }
     uint8_t getMonth() {
       return m_rtcTime.mon + 1;
@@ -73,7 +75,8 @@ class RtcTime {
       m_rtcTime.hour = webTime.getHours();
       m_rtcTime.min = webTime.getMinutes();
       m_rtcTime.sec = webTime.getSeconds();
-      m_rtcTime.mday = webTime.getDay();
+      m_rtcTime.mday = webTime.getMonthDay();
+      m_rtcTime.wday = webTime.getDay();
       m_rtcTime.mon = webTime.getMonth() -1;
       m_rtcTime.year = webTime.getYear()-1900;
       DS3231_set(m_rtcTime);
@@ -114,9 +117,16 @@ class CurrentTime {
     {
       return m_seconds;
     }
-    uint8_t getDay()
+    uint8_t getMonthDay()
     {
       return m_day;
+    }
+    uint8_t getDay()
+    {
+      return m_weekDay;
+    }
+    uint8_t getWeekDay() {
+      return getDay();
     }
     uint8_t getMonth()
     {
@@ -152,7 +162,8 @@ class CurrentTime {
         m_hours = m_webTime.getHours();
         m_minutes = m_webTime.getMinutes();
         m_seconds = m_webTime.getSeconds();
-        m_day = m_webTime.getDay();
+        m_day = m_webTime.getMonthDay();
+        m_weekDay = m_webTime.getDay();
         m_month = m_webTime.getMonth();
         m_year = m_webTime.getYear();
       } else if (m_conf.DS3231_active) {
@@ -160,7 +171,8 @@ class CurrentTime {
         m_hours = m_rtc.getHours();
         m_minutes = m_rtc.getMinutes();
         m_seconds = m_rtc.getSeconds();
-        m_day = m_rtc.getDay();
+        m_day = m_rtc.getMonthDay();
+        m_weekDay = m_rtc.getDay();
         m_month = m_rtc.getMonth();
         m_year = m_rtc.getYear();
       }
@@ -203,6 +215,7 @@ class CurrentTime {
     uint8_t m_minutes{0};
     uint8_t m_seconds{0};
     uint8_t m_day{0};
+    uint8_t m_weekDay{0};
     uint8_t m_month{0};;
     uint16_t m_year{0};
     ZifraConfig & m_conf;
