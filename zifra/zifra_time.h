@@ -1,6 +1,8 @@
+#pragma once
 #include <ds3231.h>
 #include <NTPClient.h>
-
+#ifndef _Zifra_Time_
+#define _Zifra_Time_
 class WebTime: public NTPClient {
   public:
     using NTPClient::NTPClient;
@@ -208,3 +210,5 @@ class CurrentTime {
     RtcTime m_rtc;
     
 };
+
+#endif

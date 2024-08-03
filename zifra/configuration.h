@@ -7,10 +7,9 @@
 
 struct AlarmProperties {
   String time{};
-  //uint8_t hours{};
-  //uint8_t minutes{};
   int weekdays[7] = {0, 0, 0, 0, 0, 0, 0};
   bool fired{false};
+  unsigned long fireTime{0};
   bool active{false};  
 };
 
@@ -27,7 +26,6 @@ class ZifraConfig {
     AlarmProperties alarm1{};
     AlarmProperties alarm2{};
     AlarmProperties alarm3{};
-    bool alarmSound{true};
     Clock clock{};
     int utcOffsetInSeconds{2*3600};      
     String ntpServer{"pool.ntp.org"};
@@ -214,8 +212,6 @@ class ZifraConfig {
 
     std::function<void()> m_cb{nullptr}; 
     
-
-
 }; // class Config
 
 #endif

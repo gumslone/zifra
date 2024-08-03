@@ -64,7 +64,7 @@ EasyButton button(BUTTON_PIN, 40, true, true);
 
 #define UP_BUTTON_PIN 5
 EasyButton up_button(UP_BUTTON_PIN, 10, true, true);
-unsigned long sleep_shake_time = 0;
+
 //// HTTP Config
 
 #define COMPILE_HOUR (((__TIME__[0] - '0') * 10) + (__TIME__[1] - '0'))
@@ -105,19 +105,6 @@ String OldInfo = ""; // old board info
 // Websoket Vars
 String websocketConnection[10];
 
-bool configModeActive = true;
-
-// System Vars
-bool shouldSaveConfig = false;
-
-// clock
-unsigned long clock_delay = 0;
-uint8_t clock_num = 0;
-
-#define LEAP_YEAR(Y)                                                           \
-  ((Y > 0) && !(Y % 4) && ((Y % 100) || !(Y % 400))) // from time-lib
-char const *weekDays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-
 TickerScheduler ticker(5);
 
 // BUTTON
@@ -157,7 +144,7 @@ void HandleNotFound() {
 }
 void HandleGetConfig() {
   server.sendHeader("Connection", "close");
-  server.send(200, "application/json", GetConfig());
+  server.send(200, "application/json", zifra.conf.getConfig());
 }
 void Handle_wifisetup() {
   WifiSetup();
@@ -182,34 +169,12 @@ void SendConfig() {
           websocketConnection[i] == "/setsystem"
 
          ) {
-        String config = GetConfig();
+        String config = zifra.conf.getConfig();
         webSocket.sendTXT(i, config);
       }
     }
   }
 }
-String GetConfig() {
-  File configFile = SPIFFS.open("/config.json", "r");
-
-  if (configFile) {
-    Log(F("GetConfig"), F("Opened config file"));
-    size_t size = configFile.size();
-    // Allocate a buffer to store contents of the file.
-    std::unique_ptr<char[]> buf(new char[size]);
-
-    configFile.readBytes(buf.get(), size);
-    DynamicJsonDocument root(1024);
-    if (DeserializationError::Ok == deserializeJson(root, buf.get())) {
-    }
-
-    String json;
-    serializeJson(root, json);
-
-    return json;
-  }
-  return "";
-}
-
 /////////////////////////////////////////////////////////////////////
 void Log(String function, String message) {
 
@@ -359,50 +324,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
 #pragma endregion
 
 /////////////////////////////////////////////////////////////////////
-// alarm
-void playAlarm() {
-  if (zifra.conf.alarm1.fired || zifra.conf.alarm2.fired || zifra.conf.alarm3.fired) {
-    if (zifra.conf.alarmSound)
-      tone(4, 780, 180);
-    else
-      tone(4, 500, 180);
-    zifra.conf.alarmSound = !zifra.conf.alarmSound;
-  }
-}
-void handleAlarm() {
-  String currentTime =
-    IntFormat(zifra.time.getHoursIso()) + ":" + IntFormat(zifra.time.getMinutes()) + ":" + IntFormat(zifra.time.getSeconds());
-  byte NumDayOfWeek = dayOfWeek(zifra.time.getYear(), zifra.time.getMonth(), zifra.time.getDay());
-  if (zifra.conf.alarm1.active && !zifra.conf.alarm1.fired && zifra.conf.alarm1.time + ":00" == currentTime &&
-      zifra.conf.alarm1.weekdays[NumDayOfWeek] == 1) {
-    zifra.conf.alarm1.fired = true;
-    D_println(F("ALARM 1!"));
-    Log("handleAlarm", "ALARM 1!");
-  } else if (zifra.conf.alarm2.active && !zifra.conf.alarm2.fired && zifra.conf.alarm2.time + ":00" == currentTime &&
-             zifra.conf.alarm2.weekdays[NumDayOfWeek] == 1) {
-    zifra.conf.alarm2.fired = true;
-    D_println(F("ALARM 2!"));
-    Log("handleAlarm", "ALARM 2!");
-  } else if (zifra.conf.alarm3.active && !zifra.conf.alarm3.fired && zifra.conf.alarm3.time + ":00" == currentTime &&
-             zifra.conf.alarm3.weekdays[NumDayOfWeek] == 1) {
-    zifra.conf.alarm3.fired = true;
-    D_println(F("ALARM 3!"));
-    Log("handleAlarm", "ALARM 3!");
-  }
-
-  playAlarm();
-}
-
-void handleMuteAlarms() {
-  zifra.conf.alarm1.fired = false;
-  zifra.conf.alarm2.fired = false;
-  zifra.conf.alarm3.fired = false;
-  noTone(4);
-}
 // BUTTON
 //  Attach callback.
 void singleClick() {
-  handleMuteAlarms();
+  zifra.alarm.mute();
   tone(4, NOTE_C4, 1000 / 16);
   // stop the tone playing:
   delay(200);
@@ -411,8 +336,8 @@ void singleClick() {
   Log(F("singleClick"), F("singleClick!"));
 }
 void upClick() {
-  sleep_shake_time = millis();
-  handleMuteAlarms();
+  zifra.vol.sleepShakeTime = millis();
+  zifra.alarm.mute();
   tone(4, NOTE_C4, 1000 / 16);
   // stop the tone playing:
   delay(200);
@@ -436,15 +361,13 @@ void pf575_write(uint16_t data) {
   Wire.endTransmission();
 }
 
-uint8_t hi, lo;
 uint16_t pcf8575_read() {
   Wire.beginTransmission(address);
   Wire.endTransmission();
-
   Wire.requestFrom(address, 2);
   if (Wire.available()) {
-    lo = Wire.read();
-    hi = Wire.read();
+    uint8_t lo = Wire.read();
+    uint8_t hi = Wire.read();
     return (word(hi, lo)); // joing bytes
   }
   return 0;
@@ -479,7 +402,7 @@ void show_number(int num, bool dot = false) {
 
 void read_time() {
   zifra.time.update();
-  clock_num = 0;
+  zifra.vol.clockNum = 0;
 }
 
 void time2nixie()
@@ -491,69 +414,51 @@ void time2nixie()
 
   unsigned long l_millis = millis();
   if (val1 != 0 || zifra.conf.clock.leadingHourZero) {
-    if (clock_num == 0) {
+    if (zifra.vol.clockNum == 0) {
       show_number(val1, false);
-      clock_num++;
-      clock_delay = l_millis;
+      zifra.vol.clockNum++;
+      zifra.vol.clockDelay = l_millis;
     }
     // 100 delay
-    if (clock_num == 1 and l_millis - clock_delay > 800) {
+    if (zifra.vol.clockNum == 1 and l_millis - zifra.vol.clockDelay > 800) {
       turn_all_off();
-      clock_num++;
+      zifra.vol.clockNum++;
     }
-  } else if (clock_num < 2) {
-    clock_num = 2;
-    clock_delay = l_millis - 1000;
+  } else if (zifra.vol.clockNum < 2) {
+    zifra.vol.clockNum = 2;
+    zifra.vol.clockDelay = l_millis - 1000;
   }
 
-  if (clock_num == 2 && l_millis - clock_delay > 1000) {
+  if (zifra.vol.clockNum == 2 && l_millis - zifra.vol.clockDelay > 1000) {
     show_number(val2, false);
-    clock_num++;
+    zifra.vol.clockNum++;
   }
-  else if (clock_num == 3 and l_millis - clock_delay > 1800) {
+  else if (zifra.vol.clockNum == 3 and l_millis - zifra.vol.clockDelay > 1800) {
     turn_all_off();
-    clock_num++;
+    zifra.vol.clockNum++;
   }
-  else if (clock_num == 4 and l_millis - clock_delay > 2500 ) {
+  else if (zifra.vol.clockNum == 4 and l_millis - zifra.vol.clockDelay > 2500 ) {
     show_number(val3, true);
-    clock_num++;
+    zifra.vol.clockNum++;
   }
-  else if (clock_num == 5 and l_millis - clock_delay > 3300) {
+  else if (zifra.vol.clockNum == 5 and l_millis - zifra.vol.clockDelay > 3300) {
     turn_all_off();
-    clock_num++;
+    zifra.vol.clockNum++;
   }
-  else if (clock_num == 6 && l_millis - clock_delay > 3500) {
+  else if (zifra.vol.clockNum == 6 && l_millis - zifra.vol.clockDelay > 3500) {
     show_number(val4, true);
-    clock_num++;
+    zifra.vol.clockNum++;
   }
-  else if (clock_num == 7 and l_millis - clock_delay > 4300) {
+  else if (zifra.vol.clockNum == 7 and l_millis - zifra.vol.clockDelay > 4300) {
     turn_all_off();
-    clock_num++;
+    zifra.vol.clockNum++;
   }
 }
 
 void show_time() {
-  handleAlarm();
-  bool shakeWakeUp = ((millis() - sleep_shake_time) <= 1000 * 60 * 3) && sleep_shake_time > 0;  //  3 minutes shake wakeup
-  bool doSleep = false;
-  if (zifra.conf.clock.sleepStart != "" && zifra.conf.clock.sleepFinish != "" &&
-      zifra.conf.clock.sleep == true && shakeWakeUp == false) {
-
-    const uint8_t sleep_start_hour = zifra.conf.clock.sleepStart.substring(0, 2).toInt();
-    const uint8_t sleep_start_minute = zifra.conf.clock.sleepStart.substring(3, 5).toInt();
-
-    const uint8_t sleep_finish_hour = zifra.conf.clock.sleepFinish.substring(0, 2).toInt();
-    const uint8_t sleep_finish_minute = zifra.conf.clock.sleepFinish.substring(3, 5).toInt();
-    const uint16_t current_hours_with_minutes = zifra.time.getHours()  * 100 + zifra.time.getMinutes();
-    const uint16_t start_hours_with_minutes = sleep_start_hour * 100 + sleep_start_minute;
-    const uint16_t end_hours_with_minutes = sleep_finish_hour * 100 + sleep_finish_minute;
-
-    doSleep = (sleep_start_hour > sleep_finish_hour &&
-               (current_hours_with_minutes >= start_hours_with_minutes || current_hours_with_minutes <= end_hours_with_minutes))
-              || (current_hours_with_minutes >= start_hours_with_minutes && current_hours_with_minutes <= end_hours_with_minutes);
-  }
-
-  if (doSleep)
+  zifra.alarm.update();
+  bool shakeWakeUp = ((millis() - zifra.vol.sleepShakeTime) <= 1000 * 60 * 3) && zifra.vol.sleepShakeTime > 0;  //  3 minutes shake wakeup
+  if (shakeWakeUp == false && zifra.sleep())
   {
     turn_all_off();
   } else {
@@ -616,9 +521,7 @@ void setupWifi() {
   }
 
   D_println(F("Wifi connected...yeey :)"));
-
   zifra.conf.saveConfig();
-
   D_println("Setup: Local IP");
   D_println("Setup " + WiFi.localIP().toString());
   D_println("Setup " + WiFi.gatewayIP().toString());
