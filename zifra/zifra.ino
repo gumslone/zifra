@@ -553,13 +553,44 @@ void setRtcCb()
 {
   zifra.time.setRTC();
 }
+
+void startUpTone()
+{
+  // iterate over the notes of the melody:
+  for (int thisNote = 0; thisNote < 8; thisNote++) {
+
+    // to calculate the note duration, take one second divided by the note type.
+    // e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+    const int noteDuration = 1000 / noteDurations[thisNote];
+    tone(4, melody[thisNote], noteDuration);
+
+    // to distinguish the notes, set a minimum time between them.
+    // the note's duration + 30% seems to work well:
+    const int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+    // stop the tone playing:
+    noTone(4);
+  }
+}
+void startUpNumbers()
+{
+  // Set all ports as output
+  turn_all_off();
+  // iterate over the notes of the melody:
+  for (int digit = 0; digit < 11; digit++) {
+    turn_all_off();
+    delay(10);
+    show_number(digit);
+    delay(100);
+  }
+  // Set all ports as output
+  turn_all_off();
+}
 void setup() {
   snprintf(identifier, sizeof(identifier), "ZIFRA-%X", ESP.getChipId());
 
   Wire.begin(2, 0);
-
-  // Set all ports as output
-  turn_all_off();
+  startUpNumbers();
 
   Serial.begin(115200);
   while (!Serial)
@@ -579,21 +610,9 @@ void setup() {
   if (i2cScanner::addressExists("0x68")) {
     zifra.conf.DS3231_active = true;
   }
-  // iterate over the notes of the melody:
-  for (int thisNote = 0; thisNote < 8; thisNote++) {
+  
+  startUpTone();
 
-    // to calculate the note duration, take one second divided by the note type.
-    // e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
-    const int noteDuration = 1000 / noteDurations[thisNote];
-    tone(4, melody[thisNote], noteDuration);
-
-    // to distinguish the notes, set a minimum time between them.
-    // the note's duration + 30% seems to work well:
-    const int pauseBetweenNotes = noteDuration * 1.30;
-    delay(pauseBetweenNotes);
-    // stop the tone playing:
-    noTone(4);
-  }
   zifra.conf.setCb(setRtcCb);
   zifra.time.setTimeOffset();
 
