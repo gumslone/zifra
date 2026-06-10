@@ -1,0 +1,67 @@
+name: Build release
+
+# Builds the firmware and publishes a GitHub release whenever a pull
+# request from the "development" branch is merged into "main".
+# Can also be started manually from the Actions tab.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       github.event.pull_request.head.ref == 'development')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Install ESP8266 core
+        run: |
+          arduino-cli config init --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp8266:esp8266@2.7.4
+
+      - name: Install libraries
+        run: |
+          arduino-cli config set library.enable_unsafe_install true
+          arduino-cli lib install "ArduinoJson@6.21.5"
+          arduino-cli lib install "EasyButton@2.0.0"
+          arduino-cli lib install "NTPClient@3.2.1"
+          arduino-cli lib install "WebSockets@2.2.1"
+          arduino-cli lib install "WiFiManager@2.0.15-rc.1"
+          arduino-cli lib install --git-url https://github.com/Toshik/TickerScheduler.git
+          arduino-cli lib install --git-url https://github.com/rodan/ds3231.git
+
+      - name: Build firmware (release and debug)
+        run: ./build.sh all
+
+      - name: Version stamp
+        id: version
+        # Same YYMMDDHHMM format the firmware derives from its compile time
+        # and shows as version on the dashboard.
+        run: echo "version=$(date +%y%m%d%H%M)" >> "$GITHUB_OUTPUT"
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p dist
+          cp zifra/build/release/zifra.ino.bin "dist/zifra_esp8285_${{ steps.version.outputs.version }}.bin"
+          cp zifra/build/debug/zifra.ino.bin "dist/zifra_esp8285_${{ steps.version.outputs.version }}_debug.bin"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: ZIFRA firmware ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: dist/*
