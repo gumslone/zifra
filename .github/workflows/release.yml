@@ -32,17 +32,8 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install esp8266:esp8266@2.7.4
 
-      - name: Install libraries
-        run: |
-          arduino-cli config set library.enable_unsafe_install true
-          arduino-cli lib install "ArduinoJson@6.21.5"
-          arduino-cli lib install "EasyButton@2.0.0"
-          arduino-cli lib install "NTPClient@3.2.1"
-          arduino-cli lib install "WebSockets@2.2.1"
-          arduino-cli lib install "WiFiManager@2.0.15-rc.1"
-          arduino-cli lib install --git-url https://github.com/Toshik/TickerScheduler.git
-          arduino-cli lib install --git-url https://github.com/rodan/ds3231.git
-
+      # All used libraries are vendored in ./libraries and picked up by
+      # build.sh via arduino-cli's --libraries flag.
       - name: Build firmware (release and debug)
         run: ./build.sh all
 

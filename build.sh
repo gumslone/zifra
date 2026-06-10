@@ -11,7 +11,9 @@
 set -euo pipefail
 
 FQBN="esp8266:esp8266:esp8285"
-SKETCH_DIR="$(cd "$(dirname "$0")/zifra" && pwd)"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+SKETCH_DIR="$REPO_DIR/zifra"
+LIBRARIES_DIR="$REPO_DIR/libraries" # vendored copies of all used libraries
 
 build() {
   local mode="$1" debug_value="$2"
@@ -20,6 +22,7 @@ build() {
   echo "==> Building $mode (DEBUG=$debug_value)"
   arduino-cli compile \
     --fqbn "$FQBN" \
+    --libraries "$LIBRARIES_DIR" \
     --build-property "compiler.cpp.extra_flags=-DDEBUG=$debug_value" \
     --output-dir "$out_dir" \
     "$SKETCH_DIR"
