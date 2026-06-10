@@ -8,59 +8,59 @@ class ZifraAlarm {
     ZifraAlarm(ZifraConfig & conf, CurrentTime & time): m_conf(conf), m_time(time) {}
     void update()
     {
-      activateAlarm();
-      expire();
+      activateAlarms();
+      expireAlarms();
       playAlarm();
     }
     void mute() {
-      m_conf.alarm1.fired = false;
-      m_conf.alarm2.fired = false;
-      m_conf.alarm3.fired = false;
-      noTone(4);
+      for (auto &alarm : m_conf.alarms) {
+        alarm.fired = false;
+      }
+      noTone(BUZZER_PIN);
     }
 
   private:
+    static constexpr unsigned long ALARM_DURATION_MINUTES = 10;
     ZifraConfig & m_conf;
     CurrentTime & m_time;
     bool m_alarmSound{false};
 
-    void activateAlarm() {
+    void activateAlarms() {
       const String currentTime =
         IntFormat(m_time.getHoursIso()) + ":" + IntFormat(m_time.getMinutes());
       const uint8_t weekDay = m_time.getWeekDay();
-      if (m_conf.alarm1.active && !m_conf.alarm1.fired && m_conf.alarm1.time == currentTime && m_time.getSeconds() < 10 &&
-          m_conf.alarm1.weekdays[weekDay] == 1) {
-        m_conf.alarm1.fired = true;
-        m_conf.alarm1.fireTime = millis();
-        D_println(F("ALARM 1!"));
-      } else if (m_conf.alarm2.active && !m_conf.alarm2.fired && m_conf.alarm2.time == currentTime && m_time.getSeconds() < 10 &&
-                 m_conf.alarm2.weekdays[weekDay] == 1) {
-        m_conf.alarm2.fired = true;
-        m_conf.alarm2.fireTime = millis();
-        D_println(F("ALARM 2!"));
-      } else if (m_conf.alarm3.active && !m_conf.alarm3.fired && m_conf.alarm3.time == currentTime && m_time.getSeconds() < 10 &&
-                 m_conf.alarm3.weekdays[weekDay] == 1) {
-        m_conf.alarm3.fired = true;
-        m_conf.alarm3.fireTime = millis();
-        D_println(F("ALARM 3!"));
+      for (uint8_t i = 0; i < ZifraConfig::ALARM_COUNT; i++) {
+        AlarmProperties &alarm = m_conf.alarms[i];
+        if (alarm.active && !alarm.fired && alarm.time == currentTime &&
+            m_time.getSeconds() < 10 && alarm.weekdays[weekDay] == 1) {
+          alarm.fired = true;
+          alarm.fireTime = millis();
+          D_print(F("ALARM "));
+          D_println(i + 1);
+          break; // at most one alarm starts per update
+        }
       }
     }
-    bool expire()
+    void expireAlarms()
     {
-      if (m_conf.alarm1.fired) {
-        m_conf.alarm1.fired = ((millis() - m_conf.alarm1.fireTime) / 60000) <= 10;
-      } else if (m_conf.alarm2.fired) {
-        m_conf.alarm2.fired = ((millis() - m_conf.alarm2.fireTime) / 60000) <= 10;
-      } else if (m_conf.alarm3.fired) {
-        m_conf.alarm3.fired = ((millis() - m_conf.alarm3.fireTime) / 60000) <= 10;
+      for (auto &alarm : m_conf.alarms) {
+        if (alarm.fired) {
+          alarm.fired = ((millis() - alarm.fireTime) / 60000) <= ALARM_DURATION_MINUTES;
+          break;
+        }
       }
+    }
+    bool anyFired() const {
+      for (const auto &alarm : m_conf.alarms) {
+        if (alarm.fired) {
+          return true;
+        }
+      }
+      return false;
     }
     void playAlarm() {
-      if (m_conf.alarm1.fired || m_conf.alarm2.fired || m_conf.alarm3.fired) {
-        if (m_alarmSound)
-          tone(4, 780, 180);
-        else
-          tone(4, 500, 180);
+      if (anyFired()) {
+        tone(BUZZER_PIN, m_alarmSound ? 780 : 500, 180);
         m_alarmSound = !m_alarmSound;
       }
     }

@@ -10,32 +10,27 @@ struct AlarmProperties {
   int weekdays[7] = {0, 0, 0, 0, 0, 0, 0};
   bool fired{false};
   unsigned long fireTime{0};
-  bool active{false};  
+  bool active{false};
 };
 
-struct Clock{
-      bool iso{true};
-      bool leadingHourZero{true};
-      bool sleep{false};
-      String sleepStart{};
-      String sleepFinish{};
+struct Clock {
+  bool iso{true};
+  bool leadingHourZero{true};
+  bool sleep{false};
+  String sleepStart{};
+  String sleepFinish{};
 };
 
 class ZifraConfig {
   public:
-    AlarmProperties alarm1{};
-    AlarmProperties alarm2{};
-    AlarmProperties alarm3{};
+    static constexpr uint8_t ALARM_COUNT = 3;
+    AlarmProperties alarms[ALARM_COUNT]{};
     Clock clock{};
-    int utcOffsetInSeconds{2*3600};      
+    int utcOffsetInSeconds{2 * 3600};
     String ntpServer{"pool.ntp.org"};
     bool wifiActive{true};
     bool DS3231_active{false};
-    
-    ZifraConfig()
-    {
-      //loadConfig();
-    }
+
     void setCb(std::function<void()> cb)
     {
       m_cb = cb;
@@ -43,35 +38,29 @@ class ZifraConfig {
     void saveConfigCallback() {
       m_shouldSaveConfig = true;
     }
-    void saveConfig() {
+    void saveConfig(bool force = false) {
       // save the custom parameters to FS
-      if (m_shouldSaveConfig) {
+      if (m_shouldSaveConfig || force) {
         DynamicJsonDocument json(4096);
 
-          json["utcOffsetInSeconds"] = utcOffsetInSeconds;      
-          json["ntpServer"] = ntpServer;
-          json["wifiActive"] = wifiActive;
-      
-          json["clock_12h"] = !clock.iso;
-      
-          json["clock_leading_hour_zero"] = clock.leadingHourZero;
-      
-          json["clock_sleep"] = clock.sleep;
-          json["clock_sleep_start"] = clock.sleepStart;
-          json["clock_sleep_finish"] = clock.sleepFinish;
-      
-          json["alarm1Weekdays"] = join(alarm1.weekdays, ",", 7);
-          json["alarm2Weekdays"] = join(alarm2.weekdays, ",", 7);
-          json["alarm3Weekdays"] = join(alarm3.weekdays, ",", 7);
-      
-          json["alarm1Active"] = alarm1.active;
-          json["alarm2Active"] = alarm2.active;
-          json["alarm3Active"] = alarm3.active;
-      
-          json["alarm1Time"] = alarm1.time;
-          json["alarm2Time"] = alarm2.time;
-          json["alarm3Time"] = alarm3.time;
-      
+        json["utcOffsetInSeconds"] = utcOffsetInSeconds;
+        json["ntpServer"] = ntpServer;
+        json["wifiActive"] = wifiActive;
+
+        json["clock_12h"] = !clock.iso;
+        json["clock_leading_hour_zero"] = clock.leadingHourZero;
+
+        json["clock_sleep"] = clock.sleep;
+        json["clock_sleep_start"] = clock.sleepStart;
+        json["clock_sleep_finish"] = clock.sleepFinish;
+
+        for (uint8_t i = 0; i < ALARM_COUNT; i++) {
+          const String prefix = alarmPrefix(i);
+          json[prefix + "Weekdays"] = join(alarms[i].weekdays, ",", 7);
+          json[prefix + "Active"] = alarms[i].active;
+          json[prefix + "Time"] = alarms[i].time;
+        }
+
         File configFile = SPIFFS.open("/config.json", "w");
         serializeJson(json, configFile);
         configFile.close();
@@ -98,9 +87,6 @@ class ZifraConfig {
             D_println(F("Config loaded"));
           } else {
             switch (error.code()) {
-              case DeserializationError::Ok:
-                D_println(F("Deserialization succeeded"));
-                break;
               case DeserializationError::InvalidInput:
                 D_println(F("Invalid input!"));
                 break;
@@ -131,28 +117,34 @@ class ZifraConfig {
 
     String getConfig() {
       File configFile = SPIFFS.open("/config.json", "r");
-
-      if (configFile) {
-        const size_t size = configFile.size();
-        std::unique_ptr<char[]> buf(new char[size]);
-
-        configFile.readBytes(buf.get(), size);
-        DynamicJsonDocument root(4096);
-
-        if (DeserializationError::Ok == deserializeJson(root, buf.get())) {}
-        String json;
-        serializeJson(root, json);
-        return json;
-
+      if (!configFile) {
+        return "{}";
       }
+
+      const size_t size = configFile.size();
+      std::unique_ptr<char[]> buf(new char[size]);
+      configFile.readBytes(buf.get(), size);
+
+      DynamicJsonDocument root(4096);
+      deserializeJson(root, buf.get());
+      String json;
+      serializeJson(root, json);
+      return json;
     }
 
   private:
 
     bool m_shouldSaveConfig = false;
+    std::function<void()> m_cb{nullptr};
+
+    static String alarmPrefix(uint8_t index) {
+      return "alarm" + String(index + 1);
+    }
     void callback()
     {
-       if ( m_cb != NULL) {m_cb();}
+      if (m_cb) {
+        m_cb();
+      }
     }
     void setConfigParameters(const JsonObject &json) {
       D_println("Config:");
@@ -170,7 +162,6 @@ class ZifraConfig {
       setData(json, "wifiActive", wifiActive);
       setData(json, "utcOffsetInSeconds", utcOffsetInSeconds);
       setData(json, "ntpServer", ntpServer);
-      setData(json, "clock_12h", clock.iso);
       if (json.containsKey("clock_12h")) {
         clock.iso = !json["clock_12h"].as<bool>();
       }
@@ -178,25 +169,17 @@ class ZifraConfig {
       setData(json, "clock_sleep", clock.sleep);
       setData(json, "clock_sleep_start", clock.sleepStart);
       setData(json, "clock_sleep_finish", clock.sleepFinish);
-      if (json.containsKey("alarm1Weekdays")) {
-        createWeekdaysElements(json["alarm1Weekdays"], alarm1.weekdays);
+
+      for (uint8_t i = 0; i < ALARM_COUNT; i++) {
+        const String prefix = alarmPrefix(i);
+        if (json.containsKey(prefix + "Weekdays")) {
+          createWeekdaysElements(json[prefix + "Weekdays"], alarms[i].weekdays);
+        }
+        setData(json, prefix + "Active", alarms[i].active);
+        setData(json, prefix + "Time", alarms[i].time);
       }
-      if (json.containsKey("alarm2Weekdays")) {
-        createWeekdaysElements(json["alarm2Weekdays"], alarm2.weekdays);
-      }
-      if (json.containsKey("alarm3Weekdays")) {
-        createWeekdaysElements(json["alarm3Weekdays"], alarm3.weekdays);
-      }
-      setData(json, "alarm1Active", alarm1.active);
-      setData(json, "alarm1Time", alarm1.time);
-      
-      setData(json, "alarm2Active", alarm2.active);
-      setData(json, "alarm2Time", alarm2.time);
-      
-      setData(json, "alarm3Active", alarm3.active);
-      setData(json, "alarm3Time", alarm3.time);
     }
-    
+
     template<typename T>
     void setData(const JsonObject &json, const String& key, T & var)
     {
@@ -210,8 +193,6 @@ class ZifraConfig {
              &arr[4], &arr[5], &arr[6]);
     }
 
-    std::function<void()> m_cb{nullptr}; 
-    
 }; // class Config
 
 #endif
