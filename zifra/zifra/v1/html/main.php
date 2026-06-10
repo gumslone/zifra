@@ -1,18 +1,11 @@
-<?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-header("Access-Control-Allow-Headers: Origin");
-header('P3P: CP="CAO PSA OUR"'); // Makes IE to support cookies
-header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept");
-
-?>
+<?php require __DIR__ . '/_cors.php'; ?>
 <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
   <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">ZIFRA</a>
   <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
 
-  <ul class="navbar-nav px-3"  style="margin-right:50px;">
+  <ul class="navbar-nav px-3" style="margin-right:50px;">
       <li class="nav-item text-nowrap">
           <div class="text-center nav-link active">
               Connection: <span id="connectionStatus">Status Unknown</span>
@@ -32,27 +25,25 @@ header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Ac
               Dashboard
             </a>
           </li>
-          
           <li class="nav-item">
-            <a class="nav-link" href="javascript:void(0);" onclick="javascript:ChangeContent(this, 'settime', '#right-content');">
+            <a class="nav-link" href="javascript:void(0);" onclick="ChangeContent(this, 'settime', '#right-content');">
               <span data-feather="clock"></span>
               Clock Setting
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="javascript:void(0);" onclick="javascript:ChangeContent(this, 'setalarm', '#right-content');">
+            <a class="nav-link" href="javascript:void(0);" onclick="ChangeContent(this, 'setalarm', '#right-content');">
               <span data-feather="bell"></span>
               Alarm Setting
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="javascript:void(0);" onclick="javascript:ChangeContentIframe(this, 'update', '#right-content');">
+            <a class="nav-link" href="javascript:void(0);" onclick="ChangeContentIframe(this, 'update', '#right-content');">
               <span data-feather="upload"></span>
               Update
             </a>
           </li>
         </ul>
-
       </div>
     </nav>
 
@@ -117,7 +108,6 @@ header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Ac
           </div>
       </div>
       <div class="col-md-1">
-
       </div>
       <div class="col-md-6">
           <h2 class="text-center">Log</h2>
@@ -132,5 +122,5 @@ header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Ac
   </div>
 </div>
 <script>
-      feather.replace()
+    feather.replace();
 </script>
