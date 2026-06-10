@@ -1,177 +1,326 @@
+/*
+ * ZIFRA — single-tube IN-12B nixie clock web interface
+ * Dark theme with the warm amber glow of a nixie tube.
+ */
 
-.weekDays a
-{
-    padding: 2px 3px !important;
-    text-decoration: none !important;
+:root {
+    --nixie-glow: #f2be44;
+    --nixie-glow-deep: #f45404;
+    --nixie-bg: #14110c;
+    --nixie-panel: #1c1813;
+    --nixie-border: #3a332a;
+    --nixie-text: #e8e0d0;
+    --nixie-muted: #9a8f7c;
 }
-
-.weekDays a:first-child:not(.selectedDay):not(:hover)
-{
-	border-radius: 20% 0 0 20% !important;
-    padding: 2px 3px 2px 6px !important;
-}
-
-.weekDays a:last-child:not(.selectedDay):not(:hover)
-{
-	border-radius: 0 20% 20% 0 !important;
-    padding: 2px 6px 2px 3px !important;
-}
-
-.weekDays a:first-child:hover
-{
-	padding: 2px 1px 2px 4px !important;
-}
-
-.weekDays a:first-child
-{
-	padding: 2px 2px 2px 5px !important;
-}
-
-.weekDays a:hover
-{
-	border-style: solid !important;
-	border-radius: 20% !important;
-	border-width: 2px !important;
-	border-color: #4b67c2 !important;
-    text-decoration: none !important;
-	padding: 2px 1px !important;
-}
-
-.weekDays .selectedDay
-{
-    border-style: solid !important;
-	border-radius: 20% !important;
-	border-width: 1px !important;
-	border-color: gray !important;
-	color: #4b67c2 !important;
-	padding: 2px !important;
-}
-
-
-.bd-placeholder-img {
-    font-size: 1.125rem;
-    text-anchor: middle;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    user-select: none;
-  }
-
-  @media (min-width: 768px) {
-    .bd-placeholder-img-lg {
-      font-size: 3.5rem;
-    }
-  }
 
 body {
     font-size: .875rem;
-  }
-  
-  .feather {
+    background-color: var(--nixie-bg);
+    color: var(--nixie-text);
+    color-scheme: dark;
+}
+
+h2 {
+    color: var(--nixie-glow);
+    text-shadow: 0 0 8px rgba(242, 190, 68, .35);
+}
+
+hr {
+    border-color: var(--nixie-border);
+    opacity: 1;
+}
+
+a {
+    color: var(--nixie-glow);
+}
+
+code {
+    color: var(--nixie-glow);
+}
+
+.text-muted, .form-text {
+    color: var(--nixie-muted) !important;
+}
+
+.help-text {
+    color: var(--nixie-muted);
+    font-size: .8rem;
+    margin-top: .25rem;
+}
+
+/*
+ * Panels (info boxes on the dashboard)
+ */
+
+.panel {
+    background: var(--nixie-panel);
+    border: 1px solid var(--nixie-border);
+    border-radius: .5rem;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.panel h2 {
+    font-size: 1.25rem;
+}
+
+/*
+ * Forms
+ */
+
+.form-control {
+    background-color: #211c15;
+    border-color: #4a4036;
+    color: var(--nixie-text);
+}
+
+.form-control:focus {
+    background-color: #211c15;
+    border-color: var(--nixie-glow);
+    box-shadow: 0 0 0 .25rem rgba(242, 190, 68, .25);
+    color: var(--nixie-text);
+}
+
+.form-control:disabled, .form-control[disabled] {
+    background-color: #1a160f;
+    color: var(--nixie-muted);
+}
+
+.form-check-input {
+    background-color: #211c15;
+    border-color: #4a4036;
+}
+
+.form-check-input:checked {
+    background-color: var(--nixie-glow);
+    border-color: var(--nixie-glow);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+label {
+    margin-bottom: .25rem;
+}
+
+.btn-nixie {
+    color: var(--nixie-glow);
+    border: 1px solid var(--nixie-glow);
+    background: transparent;
+}
+
+.btn-nixie:hover, .btn-nixie:focus {
+    color: var(--nixie-bg);
+    background: var(--nixie-glow);
+    box-shadow: 0 0 12px rgba(242, 190, 68, .6);
+}
+
+/*
+ * Tables
+ */
+
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: rgba(242, 190, 68, .05);
+    --bs-table-striped-color: var(--nixie-text);
+    color: var(--nixie-text);
+    border-color: var(--nixie-border);
+}
+
+/*
+ * Modals
+ */
+
+.modal-content {
+    background: var(--nixie-panel);
+    color: var(--nixie-text);
+    border: 1px solid var(--nixie-border);
+}
+
+.modal-header {
+    border-bottom-color: var(--nixie-border);
+}
+
+.modal-title {
+    color: var(--nixie-glow);
+}
+
+/*
+ * Live nixie tube demo (dashboard)
+ */
+
+.nixie-tube {
+    display: inline-block;
+    position: relative;
+    width: 72px;
+    height: 110px;
+    border: 2px solid #4a4036;
+    border-radius: 36px 36px 14px 14px;
+    background: radial-gradient(ellipse at 50% 40%, #2a2118 0%, #16120c 75%);
+    text-align: center;
+    vertical-align: middle;
+    box-shadow: inset 0 0 18px rgba(0, 0, 0, .8);
+}
+
+.nixie-digit {
+    font-family: "Courier New", monospace;
+    font-weight: bold;
+    font-size: 64px;
+    line-height: 106px;
+    color: var(--nixie-glow);
+    text-shadow:
+        0 0 6px var(--nixie-glow),
+        0 0 14px var(--nixie-glow),
+        0 0 30px var(--nixie-glow-deep),
+        0 0 45px var(--nixie-glow-deep);
+}
+
+.nixie-dot {
+    position: absolute;
+    right: 12px;
+    bottom: 16px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2a2017;
+}
+
+.nixie-dot.lit {
+    background: var(--nixie-glow);
+    box-shadow: 0 0 6px var(--nixie-glow), 0 0 12px var(--nixie-glow-deep);
+}
+
+.nixie-tube.nixie-off .nixie-digit {
+    color: #2a2017;
+    text-shadow: none;
+}
+
+/*
+ * Weekday picker (jquery.weekline)
+ */
+
+.weekDays a {
+    padding: 2px 3px !important;
+    text-decoration: none !important;
+    color: var(--nixie-text);
+}
+
+.weekDays a:first-child:not(.selectedDay):not(:hover) {
+    border-radius: 20% 0 0 20% !important;
+    padding: 2px 3px 2px 6px !important;
+}
+
+.weekDays a:last-child:not(.selectedDay):not(:hover) {
+    border-radius: 0 20% 20% 0 !important;
+    padding: 2px 6px 2px 3px !important;
+}
+
+.weekDays a:first-child:hover {
+    padding: 2px 1px 2px 4px !important;
+}
+
+.weekDays a:first-child {
+    padding: 2px 2px 2px 5px !important;
+}
+
+.weekDays a:hover {
+    border-style: solid !important;
+    border-radius: 20% !important;
+    border-width: 2px !important;
+    border-color: var(--nixie-glow) !important;
+    text-decoration: none !important;
+    padding: 2px 1px !important;
+}
+
+.weekDays .selectedDay {
+    border-style: solid !important;
+    border-radius: 20% !important;
+    border-width: 1px !important;
+    border-color: var(--nixie-glow) !important;
+    color: var(--nixie-glow) !important;
+    text-shadow: 0 0 6px rgba(242, 190, 68, .5);
+    padding: 2px !important;
+}
+
+/*
+ * Feather icons
+ */
+
+.feather {
     width: 16px;
     height: 16px;
     vertical-align: text-bottom;
-  }
-  
-  /*
-   * Sidebar
-   */
-  
-  .sidebar {
+}
+
+/*
+ * Sidebar
+ */
+
+.sidebar {
     position: fixed;
     top: 0;
-    /* rtl:raw:
-    right: 0;
-    */
     bottom: 0;
-    /* rtl:remove */
     left: 0;
     z-index: 100; /* Behind the navbar */
     padding: 48px 0 0; /* Height of navbar */
-    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-  }
-  
-  @media (max-width: 767.98px) {
+    background-color: var(--nixie-panel);
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .4);
+}
+
+@media (max-width: 767.98px) {
     .sidebar {
-      top: 5rem;
+        top: 5rem;
     }
-  }
-  
-  .sidebar-sticky {
-    position: relative;
-    top: 0;
-    height: calc(100vh - 48px);
-    padding-top: .5rem;
-    overflow-x: hidden;
-    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
-  }
-  
-  .sidebar .nav-link {
+}
+
+.sidebar .nav-link {
     font-weight: 500;
-    color: #333;
-  }
-  
-  .sidebar .nav-link .feather {
+    color: var(--nixie-text);
+}
+
+.sidebar .nav-link .feather {
     margin-right: 4px;
-    color: #727272;
-  }
-  
-  .sidebar .nav-link.active {
-    color: #007bff;
-  }
-  
-  .sidebar .nav-link:hover .feather,
-  .sidebar .nav-link.active .feather {
+    color: var(--nixie-muted);
+}
+
+.sidebar .nav-link.active {
+    color: var(--nixie-glow);
+}
+
+.sidebar .nav-link:hover .feather,
+.sidebar .nav-link.active .feather {
     color: inherit;
-  }
-  
-  .sidebar-heading {
-    font-size: .75rem;
-    text-transform: uppercase;
-  }
-  
-  /*
-   * Navbar
-   */
-  
-  .navbar-brand {
+}
+
+/*
+ * Navbar
+ */
+
+.navbar-brand {
     padding-top: .5rem;
     padding-bottom: .5rem;
     font-size: 1.5rem;
     background-color: #000;
     box-shadow: inset -1px 0 0 rgba(0, 0, 0, .25);
-    color:#f2be44;
+    color: var(--nixie-glow);
     text-shadow:
-      0 0 7px #f2be44,
-      0 0 10px #f2be44,
-      0 0 21px #f2be44,
-      0 0 42px #F45404,
-      0 0 82px #F45404,
-      0 0 92px #F45404,
-      0 0 102px #F45404,
-      0 0 151px #F45404;
+        0 0 7px #f2be44,
+        0 0 10px #f2be44,
+        0 0 21px #f2be44,
+        0 0 42px #F45404,
+        0 0 82px #F45404,
+        0 0 92px #F45404,
+        0 0 102px #F45404,
+        0 0 151px #F45404;
     font-weight: bolder;
-  }
-  .navbar-dark .navbar-brand {
-    color:#f2be44;
 }
-  .navbar .navbar-toggler {
+
+.navbar-dark .navbar-brand {
+    color: var(--nixie-glow);
+}
+
+.navbar .navbar-toggler {
     top: .25rem;
     right: 1rem;
-  }
-  
-  .navbar .form-control {
-    padding: .75rem 1rem;
-    border-width: 0;
-    border-radius: 0;
-  }
-  
-  .form-control-dark {
-    color: #fff;
-    background-color: rgba(255, 255, 255, .1);
-    border-color: rgba(255, 255, 255, .1);
-  }
-  
-  .form-control-dark:focus {
-    border-color: transparent;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, .25);
-  }
+}
