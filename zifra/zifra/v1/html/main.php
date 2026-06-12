@@ -115,11 +115,11 @@
                   the minutes:
                 </p>
                 <p class="text-center">
-                  <b>H</b> &middot; <b>H</b> &nbsp;&nbsp; <b>M.</b> &middot; <b>M.</b>
+                  <b>H</b> &middot; <b>H</b> &nbsp;&nbsp; <b>.M</b> &middot; <b>.M</b>
                 </p>
                 <p>
                   While the <b>minute</b> digits are shown, the small <b>decimal point</b>
-                  in the lower right of the tube glows &mdash; that is how you tell minutes
+                  in the lower left of the tube glows &mdash; that is how you tell minutes
                   from hours.
                 </p>
                 <p class="mb-0">

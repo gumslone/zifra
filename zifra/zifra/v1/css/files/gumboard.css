@@ -156,7 +156,7 @@ label {
     width: 72px;
     height: 110px;
     border: 2px solid #4a4036;
-    border-radius: 36px 36px 14px 14px;
+    border-radius: 36px;
     background: radial-gradient(ellipse at 50% 40%, #2a2118 0%, #16120c 75%);
     text-align: center;
     vertical-align: middle;
@@ -178,7 +178,7 @@ label {
 
 .nixie-dot {
     position: absolute;
-    right: 12px;
+    left: 12px;
     bottom: 16px;
     width: 8px;
     height: 8px;
