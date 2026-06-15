@@ -1,0 +1,3 @@
+[submodule "tools/bugzapper"]
+	path = tools/bugzapper
+	url = https://github.com/gumslone/bugzapper.git

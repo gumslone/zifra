@@ -17,3 +17,26 @@ a single digit nixie tube clock <a href="https://www.youtube.com/watch?v=uE2CU6p
 <img src="https://github.com/gumslone/zifra/blob/main/images/time.png?raw=true" width="500">
 <img src="https://github.com/gumslone/zifra/blob/main/images/alarm.png?raw=true" width="500">
 <img src="https://github.com/gumslone/zifra/blob/main/images/update.png?raw=true" width="500">
+
+### Flashing over USB
+
+For the first flash (or to recover a clock that can't reach the web updater),
+ZIFRA bundles [BugZapper](https://github.com/gumslone/bugzapper) — a flasher with
+a built-in serial monitor — as a git submodule under `tools/bugzapper`. esptool
+is bundled, so it needs nothing but `python3`.
+
+Clone with submodules (or pull it in afterwards):
+
+```sh
+git clone --recurse-submodules https://github.com/gumslone/zifra.git
+# already cloned?
+git submodule update --init
+```
+
+Then, from the repo root:
+
+```sh
+./flash.sh        # flash the bundled zifra/zifra.ino.esp8285.bin (-f for another)
+./flash.sh -l     # list detected serial ports
+./bugzapper.sh    # GUI flasher + serial monitor (needs python3 with tkinter)
+```
