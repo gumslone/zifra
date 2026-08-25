@@ -1,0 +1,24 @@
+# Static analysis for the host-testable firmware logic (run via tests/tidy.sh).
+#
+# Disabled checks, and why:
+#  - bugprone-exception-escape, bugprone-throwing-static-initialization:
+#    the std::string-backed test shims can throw; the real Arduino String
+#    cannot, so these only flag shim artifacts.
+#  - bugprone-unchecked-string-to-number-conversion: atoi/atol on strings the
+#    device itself controls (config values it wrote).
+#  - bugprone-easily-swappable-parameters, bugprone-narrowing-conversions,
+#    bugprone-implicit-widening-of-multiplication-result: noise for the
+#    int/uint8_t arithmetic idiomatic in Arduino code.
+Checks: >
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*,
+  -bugprone-exception-escape,
+  -bugprone-throwing-static-initialization,
+  -bugprone-unchecked-string-to-number-conversion,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -bugprone-implicit-widening-of-multiplication-result
+# Filename-based so it keeps matching after any directory reshuffle; scoped to
+# the project's own logic headers (not the test shims, not vendored libs).
+HeaderFilterRegex: '(zifra_types|sleep_logic|alarm_logic|zifra_clock_timer|common_functions)\.h$'
