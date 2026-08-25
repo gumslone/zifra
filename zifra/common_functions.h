@@ -30,7 +30,7 @@ int GetRSSIasQuality(int rssi) {
 /// <summary>
 /// Joins an int array into a separated string, e.g. {1,0,1} -> "1,0,1"
 /// </summary>
-String join(int *arr, String separator, int len) {
+String join(int *arr, const String &separator, int len) {
   String out = "";
   for (int i = 0; i < len; i++) {
     if (i > 0) {

@@ -2,24 +2,9 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <FS.h>
+#include "zifra_types.h"
 #ifndef _Zifra_Config_
 #define _Zifra_Config_
-
-struct AlarmProperties {
-  String time{};
-  int weekdays[7] = {0, 0, 0, 0, 0, 0, 0};
-  bool fired{false};
-  unsigned long fireTime{0};
-  bool active{false};
-};
-
-struct Clock {
-  bool iso{true};
-  bool leadingHourZero{true};
-  bool sleep{false};
-  String sleepStart{};
-  String sleepFinish{};
-};
 
 class ZifraConfig {
   public:

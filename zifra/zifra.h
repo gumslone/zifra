@@ -1,5 +1,6 @@
 #pragma once
 #include "configuration.h"
+#include "sleep_logic.h"
 #include "zifra_time.h"
 #include "buzz.h"
 #include "alarm.h"
@@ -26,17 +27,10 @@ public:
     time.setTimeOffset();
   }
   bool sleep() {
-    if (!conf.clock.sleep || conf.clock.sleepStart == "" ||
-        conf.clock.sleepFinish == "") {
-      return false;
-    }
-    const uint16_t now = time.getHours() * 100 + time.getMinutes();
-    const uint16_t start = toHoursWithMinutes(conf.clock.sleepStart);
-    const uint16_t finish = toHoursWithMinutes(conf.clock.sleepFinish);
-    if (start / 100 > finish / 100) { // sleep window wraps past midnight
-      return now >= start || now <= finish;
-    }
-    return now >= start && now <= finish;
+    // getHoursIso, not getHours: the window is configured on the 24h clock,
+    // so it must be compared on it too, even in 12h display mode.
+    return shouldSleep(conf.clock,
+                       time.getHoursIso() * 100 + time.getMinutes());
   }
   void off()
   {
@@ -63,11 +57,6 @@ private:
   static constexpr unsigned long SHAKE_WAKE_UP_MS = 3UL * 60UL * 1000UL; // 3 minutes shake wakeup
   ClockTimer clockTimer{};
   PF595 pf595{};
-
-  // "HH:MM" -> HHMM, e.g. "21:30" -> 2130
-  static uint16_t toHoursWithMinutes(const String &hhmm) {
-    return hhmm.substring(0, 2).toInt() * 100 + hhmm.substring(3, 5).toInt();
-  }
 
   void timeToNixie()
   {

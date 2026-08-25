@@ -1,5 +1,5 @@
 #pragma once
-
+#include "alarm_logic.h"
 #ifndef _Zifra_Alarm_
 #define _Zifra_Alarm_
 
@@ -31,8 +31,7 @@ class ZifraAlarm {
       const uint8_t weekDay = m_time.getWeekDay();
       for (uint8_t i = 0; i < ZifraConfig::ALARM_COUNT; i++) {
         AlarmProperties &alarm = m_conf.alarms[i];
-        if (alarm.active && !alarm.fired && alarm.time == currentTime &&
-            m_time.getSeconds() < 10 && alarm.weekdays[weekDay] == 1) {
+        if (alarmShouldFire(alarm, currentTime, weekDay, m_time.getSeconds())) {
           alarm.fired = true;
           alarm.fireTime = millis();
           D_print(F("ALARM "));
@@ -45,7 +44,8 @@ class ZifraAlarm {
     {
       for (auto &alarm : m_conf.alarms) {
         if (alarm.fired) {
-          alarm.fired = ((millis() - alarm.fireTime) / 60000) <= ALARM_DURATION_MINUTES;
+          alarm.fired =
+            alarmStillRinging(alarm.fireTime, millis(), ALARM_DURATION_MINUTES);
           break;
         }
       }
