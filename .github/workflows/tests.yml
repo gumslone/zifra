@@ -1,0 +1,39 @@
+name: Tests
+
+# Fast checks that need no board: native host tests, clang-tidy static
+# analysis, and a PlatformIO compile of the real firmware.
+
+on:
+  pull_request:
+  push:
+    branches: [main, development]
+
+jobs:
+  native-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./tests/run.sh
+
+  clang-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y clang-tidy
+      - run: ./tests/tidy.sh
+
+  platformio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: pio-${{ hashFiles('platformio.ini') }}
+      - run: pip install platformio
+      - run: pio run -e esp8285 -e esp8266_generic
