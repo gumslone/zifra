@@ -27,10 +27,10 @@
 #define D_println(...)
 #endif
 
-#include "common_functions.h"
-#include "Webinterface.h"
-#include "i2cscanner.h"
-#include "zifra.h"
+#include "src/common_functions.h"
+#include "src/Webinterface.h"
+#include "src/i2cscanner.h"
+#include "src/zifra.h"
 
 char identifier[24];
 

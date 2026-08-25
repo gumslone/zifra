@@ -47,10 +47,10 @@ jobs:
         run: |
           mkdir -p dist
           v="${{ steps.version.outputs.version }}"
-          cp zifra/build/esp8285/release/zifra.ino.bin         "dist/zifra_esp8285_${v}.bin"
-          cp zifra/build/esp8285/debug/zifra.ino.bin           "dist/zifra_esp8285_${v}_debug.bin"
-          cp zifra/build/esp8266_generic/release/zifra.ino.bin "dist/zifra_esp8266_generic_${v}.bin"
-          cp zifra/build/esp8266_generic/debug/zifra.ino.bin   "dist/zifra_esp8266_generic_${v}_debug.bin"
+          cp .build/esp8285/release/zifra.ino.bin         "dist/zifra_esp8285_${v}.bin"
+          cp .build/esp8285/debug/zifra.ino.bin           "dist/zifra_esp8285_${v}_debug.bin"
+          cp .build/esp8266_generic/release/zifra.ino.bin "dist/zifra_esp8266_generic_${v}.bin"
+          cp .build/esp8266_generic/debug/zifra.ino.bin   "dist/zifra_esp8266_generic_${v}_debug.bin"
 
       - name: Create release
         uses: softprops/action-gh-release@v2

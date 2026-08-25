@@ -36,7 +36,7 @@ git submodule update --init
 Then, from the repo root:
 
 ```sh
-./flash.sh        # flash the bundled zifra/zifra.ino.esp8285.bin (-f for another)
+./flash.sh        # flash the bundled firmware/zifra_esp8285.bin (-f for another)
 ./flash.sh -l     # list detected serial ports
 ./bugzapper.sh    # GUI flasher + serial monitor (needs python3 with tkinter)
 ```

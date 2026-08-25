@@ -24,7 +24,7 @@ if [ -z "$TIDY" ]; then
   exit 1
 fi
 
-FLAGS=(-std=c++17 -I"$DIR/shims" -I"$DIR" -I"$ROOT/zifra")
+FLAGS=(-std=c++17 -I"$DIR/shims" -I"$DIR" -I"$ROOT/zifra/src")
 # On macOS clang-tidy needs the SDK path to find libc++ headers.
 if [ "$(uname)" = "Darwin" ] && command -v xcrun >/dev/null 2>&1; then
   FLAGS+=(-isysroot "$(xcrun --show-sdk-path)")

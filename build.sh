@@ -6,7 +6,7 @@
 # Usage:
 #   ./build.sh            # release builds (DEBUG=0)
 #   ./build.sh debug      # debug builds with serial logging (DEBUG=1)
-#   ./build.sh release    # release builds, updates zifra/zifra.ino.esp8285.bin
+#   ./build.sh release    # release builds, updates firmware/zifra_esp8285.bin
 #   ./build.sh all        # release and debug builds
 #
 set -euo pipefail
@@ -30,7 +30,7 @@ fqbn_for_board() {
 
 build() {
   local board="$1" mode="$2" debug_value="$3"
-  local out_dir="$SKETCH_DIR/build/$board/$mode"
+  local out_dir="$REPO_DIR/.build/$board/$mode"
 
   echo "==> Building $board $mode (DEBUG=$debug_value)"
   arduino-cli compile \
@@ -41,10 +41,10 @@ build() {
     "$SKETCH_DIR"
   echo "==> $board $mode binary: $out_dir/zifra.ino.bin"
 
-  # The ESP8285 release binary is shipped in the repo next to the sketch.
+  # The ESP8285 release binary is shipped in the repo under firmware/.
   if [ "$board" = "esp8285" ] && [ "$mode" = "release" ]; then
-    cp "$out_dir/zifra.ino.bin" "$SKETCH_DIR/zifra.ino.esp8285.bin"
-    echo "==> Updated $SKETCH_DIR/zifra.ino.esp8285.bin"
+    cp "$out_dir/zifra.ino.bin" "$REPO_DIR/firmware/zifra_esp8285.bin"
+    echo "==> Updated $REPO_DIR/firmware/zifra_esp8285.bin"
   fi
 }
 

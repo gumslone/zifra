@@ -9,7 +9,7 @@ set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
 CXX="${CXX:-g++}"
-FLAGS=(-std=c++17 -Wall -Wextra -Werror -I"$DIR/shims" -I"$DIR" -I"$ROOT/zifra")
+FLAGS=(-std=c++17 -Wall -Wextra -Werror -I"$DIR/shims" -I"$DIR" -I"$ROOT/zifra/src")
 
 mkdir -p "$DIR/.build"
 status=0
