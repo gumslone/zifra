@@ -37,13 +37,26 @@ jobs:
       - name: Build firmware (release and debug)
         run: ./build.sh all
 
-      - name: Version stamp
+      - name: Read version
         id: version
-        # Same YYMMDDHHMM format the firmware derives from its compile time
-        # and shows as version on the dashboard.
-        run: echo "version=$(date +%y%m%d%H%M)" >> "$GITHUB_OUTPUT"
+        # The semantic version the firmware itself reports, from
+        # zifra/src/version.h — the single source of truth.
+        run: |
+          v="$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+' zifra/src/version.h | head -n1)"
+          if [ -z "$v" ]; then
+            echo "Could not read ZIFRA_VERSION from zifra/src/version.h" >&2
+            exit 1
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$v" >/dev/null; then
+            echo "Tag v$v already exists - bump ZIFRA_VERSION in zifra/src/version.h to publish a new release." >> "$GITHUB_STEP_SUMMARY"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Collect artifacts
+        if: steps.version.outputs.exists == 'false'
         run: |
           mkdir -p dist
           v="${{ steps.version.outputs.version }}"
@@ -53,6 +66,7 @@ jobs:
           cp .build/esp8266_generic/debug/zifra.ino.bin   "dist/zifra_esp8266_generic_${v}_debug.bin"
 
       - name: Create release
+        if: steps.version.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}

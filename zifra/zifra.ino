@@ -27,6 +27,7 @@
 #define D_println(...)
 #endif
 
+#include "src/version.h"
 #include "src/common_functions.h"
 #include "src/Webinterface.h"
 #include "src/i2cscanner.h"
@@ -49,29 +50,7 @@ EasyButton button(BUTTON_PIN, 40, true, true);
 #define UP_BUTTON_PIN 5
 EasyButton up_button(UP_BUTTON_PIN, 10, true, true);
 
-//// HTTP Config
-
-#define COMPILE_HOUR (((__TIME__[0] - '0') * 10) + (__TIME__[1] - '0'))
-#define COMPILE_MINUTE (((__TIME__[3] - '0') * 10) + (__TIME__[4] - '0'))
-#define COMPILE_SHORTYEAR (((__DATE__[9] - '0')) * 10 + (__DATE__[10] - '0'))
-#define COMPILE_MONTH                                                          \
-  ((__DATE__[2] == 'n'   ? (__DATE__[1] == 'a' ? 0 : 5)                        \
-    : __DATE__[2] == 'b' ? 1                                                   \
-    : __DATE__[2] == 'r' ? (__DATE__[0] == 'M' ? 2 : 3)                        \
-    : __DATE__[2] == 'y' ? 4                                                   \
-    : __DATE__[2] == 'l' ? 6                                                   \
-    : __DATE__[2] == 'g' ? 7                                                   \
-    : __DATE__[2] == 'p' ? 8                                                   \
-    : __DATE__[2] == 't' ? 9                                                   \
-    : __DATE__[2] == 'v' ? 10                                                  \
-    : 11) +                                                                    \
-   1)
-#define COMPILE_DAY                                                            \
-  ((__DATE__[4] == ' ' ? 0 : __DATE__[4] - '0') * 10 + (__DATE__[5] - '0'))
-
-const String version = String(COMPILE_SHORTYEAR) + IntFormat(COMPILE_MONTH) +
-                       IntFormat(COMPILE_DAY) + IntFormat(COMPILE_HOUR) +
-                       IntFormat(COMPILE_MINUTE);
+const String version = ZIFRA_VERSION;
 
 WiFiManager wifiManager;
 ESP8266WebServer server(80);
