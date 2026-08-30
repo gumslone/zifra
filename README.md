@@ -10,13 +10,14 @@ a single digit nixie tube clock <a href="https://www.youtube.com/watch?v=uE2CU6p
 - uses Network Time Protocol (NTP) for very accurate time reading in online mode.
 - has build in buzzer to setup an alarm (you can set up to 3 alarms) (shake zifra to turn off the alarm)
 - set a sleep time to turn of the nixie tube at night (shake to show time for a duration of 3 minutes during sleep time)
-- configuration web interface that can be accessed via web browser http://zifra.local
+- mobile-friendly configuration web interface that can be accessed via web browser http://zifra.local
 - update the clock to the latest firmware through the web interface
 
-<img src="https://github.com/gumslone/zifra/blob/main/images/web.png?raw=true" width="500">
-<img src="https://github.com/gumslone/zifra/blob/main/images/time.png?raw=true" width="500">
-<img src="https://github.com/gumslone/zifra/blob/main/images/alarm.png?raw=true" width="500">
-<img src="https://github.com/gumslone/zifra/blob/main/images/update.png?raw=true" width="500">
+### Web interface
+
+<img src="https://github.com/gumslone/zifra/blob/main/images/web.png?raw=true" width="640">
+
+<img src="https://github.com/gumslone/zifra/blob/main/images/time.png?raw=true" width="210"> <img src="https://github.com/gumslone/zifra/blob/main/images/alarm.png?raw=true" width="210"> <img src="https://github.com/gumslone/zifra/blob/main/images/system.png?raw=true" width="210">
 
 ### Flashing over USB
 

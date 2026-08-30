@@ -322,6 +322,8 @@ input:focus {
     width: 100%;
 }
 
+.btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
 .btn.primary {
     min-height: 48px;
     background: var(--glow);
