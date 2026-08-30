@@ -209,7 +209,7 @@ input[type="text"], input[type="number"], input[type="time"] {
 }
 
 input[type="time"] {
-    font-family: 'Courier New', monospace;
+    font-family: 'Zifra Tube', 'Courier New', monospace;
     font-weight: bold;
     font-size: 22px;
     color: var(--glow);
@@ -335,7 +335,7 @@ select:focus {
 .alarm-head { display: flex; align-items: center; justify-content: space-between; }
 
 .alarm-time {
-    font-family: 'Courier New', monospace;
+    font-family: 'Zifra Tube', 'Courier New', monospace;
     font-weight: bold;
     font-size: 34px;
     color: var(--glow);
@@ -400,7 +400,7 @@ select:focus {
 }
 
 .tube .digit {
-    font-family: 'Courier New', monospace;
+    font-family: 'Zifra Tube', 'Courier New', monospace;
     font-weight: bold;
     font-size: 60px;
     color: var(--glow);
@@ -423,7 +423,7 @@ select:focus {
 .hero-info { display: flex; flex-direction: column; gap: 6px; }
 
 .hero-time {
-    font-family: 'Courier New', monospace;
+    font-family: 'Zifra Tube', 'Courier New', monospace;
     font-weight: bold;
     font-size: 36px;
     color: var(--glow);
