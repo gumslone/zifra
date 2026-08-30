@@ -50,7 +50,7 @@ def arc(c, r, a0, a1):
 SKELETONS = {
     "zero": [[arc((310, 350), 1.0, 90, 450)]],  # ellipse ring, see sample()
     # real nixie tubes show 1 as a plain vertical wire, no flag
-    "one": [[line((310, 700), (310, 0))]],
+    "one": [[line((170, 700), (170, 0))]],
     # round head starting low on the left, steep straight diagonal, flat base
     "two": [[arc((295, 510), 168, 162, 8),
              line((461, 533), (110, 0)),
@@ -77,14 +77,15 @@ SKELETONS = {
     # a 6 rotated 180 degrees, the same tangent-smooth joint
     "nine": [[arc((-131, 510), 586, -58.5, 0),
               arc((285, 510), 170, 0, 360)]],
-    "colon": [[line((260, 460), (260, 460))], [line((260, 120), (260, 120))]],
+    "colon": [[line((170, 460), (170, 460))], [line((170, 120), (170, 120))]],
     "hyphen": [[line((140, 300), (400, 300))]],
     "period": [[line((180, 50), (180, 50))]],
 }
 
-# per-glyph advance overrides; digits all share ADVANCE so times are
-# tabular, like the fixed anode width of a real tube
-ADVANCES = {"colon": 520, "period": 360, "space": 420}
+# per-glyph advance overrides; digits share ADVANCE so times are tabular,
+# like the fixed anode width of a real tube - except 1, whose bare wire
+# left ugly holes on both sides at full tube width
+ADVANCES = {"one": 340, "colon": 340, "period": 360, "space": 420}
 
 # rings drawn as ellipses: (rx, ry) selected by the arc's r acting as a marker
 ELLIPSES = {
