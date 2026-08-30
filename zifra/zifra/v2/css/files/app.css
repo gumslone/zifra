@@ -191,6 +191,9 @@ main {
 .link-row + .link-row { border-top: 1px solid var(--divider); }
 .link-row svg { width: 18px; height: 18px; color: var(--muted); }
 
+a.link-row { text-decoration: none; }
+.lead-icon { display: flex; align-items: center; gap: 10px; }
+
 /* Inputs */
 
 input[type="text"], input[type="number"], input[type="time"] {
