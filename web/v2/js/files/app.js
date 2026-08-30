@@ -44,6 +44,7 @@
     var cfg = {
         ntpServer: 'pool.ntp.org',
         utcOffsetInSeconds: 0,
+        dstMode: 0,
         alarmTimeoutMinutes: 10,
         clock_12h: false,
         clock_leading_hour_zero: true,
@@ -127,8 +128,13 @@
             '<div class="card-title">Time source</div>' +
             '<div class="field"><span class="field-label">NTP server</span><input type="text" id="ntpServer"></div>' +
             '<div class="field"><span class="field-label">UTC offset in seconds</span><input type="number" id="utcOffsetInSeconds" step="900"></div>' +
+            '<div class="field"><span class="field-label">Summer/winter time</span><select id="dstMode">' +
+              '<option value="0">Off</option>' +
+              '<option value="1">Automatic (Europe)</option>' +
+              '<option value="2">Automatic (USA)</option>' +
+            '</select></div>' +
             '<button class="btn" id="phoneOffset">Set offset from this phone</button>' +
-            '<div class="hint" style="margin-top:8px;">No automatic daylight-saving switch &mdash; adjust twice a year, or just tap the button.</div>' +
+            '<div class="hint" style="margin-top:8px;">With automatic switching, the offset is the winter (standard) time &mdash; the clock adds the summer hour by itself.</div>' +
           '</div>' +
           '<div class="card">' +
             '<div class="card-title">Display</div>' +
@@ -233,6 +239,7 @@
     function applyConfig(json) {
         if (json.ntpServer !== undefined) cfg.ntpServer = String(json.ntpServer);
         if (json.utcOffsetInSeconds !== undefined) cfg.utcOffsetInSeconds = parseInt(json.utcOffsetInSeconds, 10) || 0;
+        if (json.dstMode !== undefined) cfg.dstMode = parseInt(json.dstMode, 10) || 0;
         if (json.alarmTimeoutMinutes !== undefined) cfg.alarmTimeoutMinutes = parseInt(json.alarmTimeoutMinutes, 10) || 10;
         if (json.clock_12h !== undefined) cfg.clock_12h = !!json.clock_12h;
         if (json.clock_leading_hour_zero !== undefined) cfg.clock_leading_hour_zero = !!json.clock_leading_hour_zero;
@@ -255,6 +262,7 @@
     function renderConfig() {
         el('ntpServer').value = cfg.ntpServer;
         el('utcOffsetInSeconds').value = cfg.utcOffsetInSeconds;
+        el('dstMode').value = cfg.dstMode;
         el('alarmTimeoutMinutes').value = cfg.alarmTimeoutMinutes;
         el('clock_12h').checked = cfg.clock_12h;
         el('clock_leading_hour_zero').checked = cfg.clock_leading_hour_zero;
@@ -279,6 +287,7 @@
     function readForm() {
         cfg.ntpServer = el('ntpServer').value;
         cfg.utcOffsetInSeconds = parseInt(el('utcOffsetInSeconds').value, 10) || 0;
+        cfg.dstMode = parseInt(el('dstMode').value, 10) || 0;
         cfg.alarmTimeoutMinutes = Math.max(1, parseInt(el('alarmTimeoutMinutes').value, 10) || 10);
         cfg.clock_12h = el('clock_12h').checked;
         cfg.clock_leading_hour_zero = el('clock_leading_hour_zero').checked;
@@ -297,6 +306,7 @@
         var out = {
             ntpServer: cfg.ntpServer,
             utcOffsetInSeconds: cfg.utcOffsetInSeconds,
+            dstMode: cfg.dstMode,
             alarmTimeoutMinutes: cfg.alarmTimeoutMinutes,
             clock_12h: cfg.clock_12h,
             clock_leading_hour_zero: cfg.clock_leading_hour_zero,
@@ -552,7 +562,16 @@
             });
         });
         el('phoneOffset').addEventListener('click', function () {
-            el('utcOffsetInSeconds').value = -(new Date().getTimezoneOffset() * 60);
+            // With automatic DST the stored offset must be the winter
+            // (standard) offset, which is the smaller of the Jan/Jul values.
+            var now = new Date();
+            var mins = -now.getTimezoneOffset();
+            if (parseInt(el('dstMode').value, 10)) {
+                var jan = -(new Date(now.getFullYear(), 0, 1).getTimezoneOffset());
+                var jul = -(new Date(now.getFullYear(), 6, 1).getTimezoneOffset());
+                mins = Math.min(jan, jul);
+            }
+            el('utcOffsetInSeconds').value = mins * 60;
         });
         function openUpdater() { location.href = '/update'; }
         el('updateBtn').addEventListener('click', openUpdater);

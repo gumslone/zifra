@@ -19,6 +19,7 @@ or build your own: the firmware, web interface and 3D-printable enclosure are al
 ### Features:
 - has a build in RTC (real time clock) chip, that allows accurate time readings when zifra is used in offline mode.
 - uses Network Time Protocol (NTP) for very accurate time reading in online mode.
+- automatic summer/winter time switching (European and US daylight-saving rules).
 - has build in buzzer to setup an alarm (you can set up to 3 alarms) (shake zifra to turn off the alarm)
 - set a sleep time to turn of the nixie tube at night (shake to show time for a duration of 3 minutes during sleep time)
 - mobile-friendly configuration web interface that can be accessed via web browser http://zifra.local

@@ -13,6 +13,7 @@ class ZifraConfig {
     Clock clock{};
     int alarmTimeoutMinutes{10}; // ringing auto-stops after this many minutes
     int utcOffsetInSeconds{2 * 3600};
+    int dstMode{0}; // automatic summer time: 0 = off, 1 = EU, 2 = US
     String ntpServer{"pool.ntp.org"};
     bool wifiActive{true};
     bool DS3231_active{false};
@@ -30,6 +31,7 @@ class ZifraConfig {
         DynamicJsonDocument json(4096);
 
         json["utcOffsetInSeconds"] = utcOffsetInSeconds;
+        json["dstMode"] = dstMode;
         json["ntpServer"] = ntpServer;
         json["wifiActive"] = wifiActive;
         json["alarmTimeoutMinutes"] = alarmTimeoutMinutes;
@@ -146,6 +148,10 @@ class ZifraConfig {
       }
       setData(json, "wifiActive", wifiActive);
       setData(json, "utcOffsetInSeconds", utcOffsetInSeconds);
+      setData(json, "dstMode", dstMode);
+      if (dstMode < 0 || dstMode > 2) {
+        dstMode = 0;
+      }
       setData(json, "ntpServer", ntpServer);
       setData(json, "alarmTimeoutMinutes", alarmTimeoutMinutes);
       if (alarmTimeoutMinutes < 1) {
@@ -171,7 +177,8 @@ class ZifraConfig {
 
       // After the new values are in place, let the owner re-apply the ones
       // that need it (NTP offset/server) - the reason saving used to reboot.
-      if (json.containsKey("utcOffsetInSeconds") || json.containsKey("ntpServer")) {
+      if (json.containsKey("utcOffsetInSeconds") || json.containsKey("ntpServer") ||
+          json.containsKey("dstMode")) {
         callback();
       }
     }

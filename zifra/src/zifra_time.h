@@ -1,6 +1,7 @@
 #pragma once
 #include <ds3231.h>
 #include <NTPClient.h>
+#include "dst_logic.h"
 #ifndef _Zifra_Time_
 #define _Zifra_Time_
 class WebTime: public NTPClient {
@@ -81,7 +82,8 @@ class CurrentTime {
     CurrentTime(WiFiUDP & ntpUDP, ZifraConfig & conf):
       m_webTime(ntpUDP, conf.ntpServer.c_str(), conf.utcOffsetInSeconds),
       m_rtc(conf),
-      m_conf(conf) {
+      m_conf(conf),
+      m_appliedOffset(conf.utcOffsetInSeconds) {
     }
     uint8_t getHoursIso()
     {
@@ -147,6 +149,7 @@ class CurrentTime {
     void update()
     {
       if (m_conf.wifiActive) {
+        updateDst();
         readFrom(m_webTime);
       } else if (m_conf.DS3231_active) {
         readFrom(m_rtc);
@@ -158,17 +161,17 @@ class CurrentTime {
     }
     void setTimeOffset()
     {
-      m_webTime.setTimeOffset(m_conf.utcOffsetInSeconds);
+      applyOffset();
     }
     // Re-applies the config's time settings at runtime (no restart needed):
     // fresh UTC offset and NTP server, then an immediate resync.
     void applySettings()
     {
-      m_webTime.setTimeOffset(m_conf.utcOffsetInSeconds);
+      applyOffset();
       m_webTime.setPoolServerName(m_conf.ntpServer.c_str());
       if (m_conf.wifiActive) {
         m_webTime.forceUpdate();
-        update();
+        update(); // re-evaluates DST on the freshly synced time
       }
     }
     void begin()
@@ -177,6 +180,30 @@ class CurrentTime {
     }
 
   private:
+    // Applies the standard offset plus the summer hour to the NTP client,
+    // tracking what was applied so UTC can be recovered from getEpochTime().
+    void applyOffset()
+    {
+      const int wanted = m_conf.utcOffsetInSeconds + (m_dstApplied ? 3600 : 0);
+      if (wanted != m_appliedOffset) {
+        m_webTime.setTimeOffset(wanted);
+        m_appliedOffset = wanted;
+      }
+    }
+    void updateDst()
+    {
+      const time_t utc = m_webTime.getEpochTime() - m_appliedOffset;
+      if (m_conf.dstMode == 1) {
+        m_dstApplied = euSummerTime(*gmtime(&utc));
+      } else if (m_conf.dstMode == 2) {
+        const time_t standard = utc + m_conf.utcOffsetInSeconds;
+        m_dstApplied = usSummerTime(*gmtime(&standard));
+      } else {
+        m_dstApplied = false;
+      }
+      applyOffset();
+    }
+
     template<typename Source>
     void readFrom(Source &source)
     {
@@ -200,6 +227,8 @@ class CurrentTime {
     ZifraConfig & m_conf;
     WebTime m_webTime;
     RtcTime m_rtc;
+    int m_appliedOffset;
+    bool m_dstApplied{false};
 
 };
 
