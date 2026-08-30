@@ -226,6 +226,10 @@ input:focus {
 .field-label { font-size: 13px; color: var(--muted); }
 .two-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 
+.minutes-field { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.minutes-field input { width: 84px; text-align: center; }
+.minutes-field span { font-size: 13px; color: var(--muted); }
+
 /* Toggle switch */
 
 .switch { position: relative; display: inline-block; width: 52px; height: 32px; flex-shrink: 0; }

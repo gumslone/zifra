@@ -22,7 +22,6 @@ class ZifraAlarm {
     }
 
   private:
-    static constexpr unsigned long ALARM_DURATION_MINUTES = 10;
     ZifraConfig & m_conf;
     CurrentTime & m_time;
     bool m_ringing{false};
@@ -48,8 +47,9 @@ class ZifraAlarm {
     {
       for (auto &alarm : m_conf.alarms) {
         if (alarm.fired) {
-          alarm.fired =
-            alarmStillRinging(alarm.fireTime, millis(), ALARM_DURATION_MINUTES);
+          alarm.fired = alarmStillRinging(
+            alarm.fireTime, millis(),
+            (unsigned long)m_conf.alarmTimeoutMinutes);
           break;
         }
       }

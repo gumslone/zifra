@@ -44,6 +44,7 @@
     var cfg = {
         ntpServer: 'pool.ntp.org',
         utcOffsetInSeconds: 0,
+        alarmTimeoutMinutes: 10,
         clock_12h: false,
         clock_leading_hour_zero: true,
         clock_sleep: false,
@@ -151,7 +152,13 @@
 
         '<section class="screen" data-screen="alarms">' +
           alarmHtml(0) + alarmHtml(1) + alarmHtml(2) +
-          '<div class="hint" style="padding:0 4px;">Rings its melody for up to 10 minutes. Press either button on the clock to mute.</div>' +
+          '<div class="card">' +
+            '<div class="row" style="min-height:0;">' +
+              '<span class="label">Auto-stop<span class="sub">A ringing alarm gives up after this long</span></span>' +
+              '<div class="minutes-field"><input type="number" id="alarmTimeoutMinutes" min="1" max="120" step="1"><span>min</span></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="hint" style="padding:0 4px;">Rings its melody until muted or the auto-stop time passes. Press either button on the clock to mute.</div>' +
           '<div class="save-area"><button class="btn primary" data-save>Save changes</button>' +
           '<div class="hint">Changes apply instantly &mdash; no restart</div></div>' +
         '</section>' +
@@ -226,6 +233,7 @@
     function applyConfig(json) {
         if (json.ntpServer !== undefined) cfg.ntpServer = String(json.ntpServer);
         if (json.utcOffsetInSeconds !== undefined) cfg.utcOffsetInSeconds = parseInt(json.utcOffsetInSeconds, 10) || 0;
+        if (json.alarmTimeoutMinutes !== undefined) cfg.alarmTimeoutMinutes = parseInt(json.alarmTimeoutMinutes, 10) || 10;
         if (json.clock_12h !== undefined) cfg.clock_12h = !!json.clock_12h;
         if (json.clock_leading_hour_zero !== undefined) cfg.clock_leading_hour_zero = !!json.clock_leading_hour_zero;
         if (json.clock_sleep !== undefined) cfg.clock_sleep = !!json.clock_sleep;
@@ -247,6 +255,7 @@
     function renderConfig() {
         el('ntpServer').value = cfg.ntpServer;
         el('utcOffsetInSeconds').value = cfg.utcOffsetInSeconds;
+        el('alarmTimeoutMinutes').value = cfg.alarmTimeoutMinutes;
         el('clock_12h').checked = cfg.clock_12h;
         el('clock_leading_hour_zero').checked = cfg.clock_leading_hour_zero;
         el('clock_sleep').checked = cfg.clock_sleep;
@@ -271,6 +280,7 @@
     function readForm() {
         cfg.ntpServer = el('ntpServer').value;
         cfg.utcOffsetInSeconds = parseInt(el('utcOffsetInSeconds').value, 10) || 0;
+        cfg.alarmTimeoutMinutes = Math.max(1, parseInt(el('alarmTimeoutMinutes').value, 10) || 10);
         cfg.clock_12h = el('clock_12h').checked;
         cfg.clock_leading_hour_zero = el('clock_leading_hour_zero').checked;
         cfg.clock_sleep = el('clock_sleep').checked;
@@ -288,6 +298,7 @@
         var out = {
             ntpServer: cfg.ntpServer,
             utcOffsetInSeconds: cfg.utcOffsetInSeconds,
+            alarmTimeoutMinutes: cfg.alarmTimeoutMinutes,
             clock_12h: cfg.clock_12h,
             clock_leading_hour_zero: cfg.clock_leading_hour_zero,
             clock_sleep: cfg.clock_sleep,

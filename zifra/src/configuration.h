@@ -11,6 +11,7 @@ class ZifraConfig {
     static constexpr uint8_t ALARM_COUNT = 3;
     AlarmProperties alarms[ALARM_COUNT]{};
     Clock clock{};
+    int alarmTimeoutMinutes{10}; // ringing auto-stops after this many minutes
     int utcOffsetInSeconds{2 * 3600};
     String ntpServer{"pool.ntp.org"};
     bool wifiActive{true};
@@ -31,6 +32,7 @@ class ZifraConfig {
         json["utcOffsetInSeconds"] = utcOffsetInSeconds;
         json["ntpServer"] = ntpServer;
         json["wifiActive"] = wifiActive;
+        json["alarmTimeoutMinutes"] = alarmTimeoutMinutes;
 
         json["clock_12h"] = !clock.iso;
         json["clock_leading_hour_zero"] = clock.leadingHourZero;
@@ -145,6 +147,10 @@ class ZifraConfig {
       setData(json, "wifiActive", wifiActive);
       setData(json, "utcOffsetInSeconds", utcOffsetInSeconds);
       setData(json, "ntpServer", ntpServer);
+      setData(json, "alarmTimeoutMinutes", alarmTimeoutMinutes);
+      if (alarmTimeoutMinutes < 1) {
+        alarmTimeoutMinutes = 1;
+      }
       if (json.containsKey("clock_12h")) {
         clock.iso = !json["clock_12h"].as<bool>();
       }
