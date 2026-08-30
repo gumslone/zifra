@@ -1,9 +1,20 @@
 <a href="https://www.buymeacoffee.com/gumslone" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
 # ZIFRA
-a single digit nixie tube clock <a href="https://www.youtube.com/watch?v=uE2CU6pZ4Vk" target="_blank">Video</a>
+
+**ZIFRA** is an open-source **single-tube nixie clock**: one Soviet-era **IN-12B nixie tube**
+spells the time out digit by digit. Powered by an **ESP8266 (ESP8285)**, it syncs its time
+over WiFi via **NTP**, keeps time offline with a **DS3231 RTC**, rings up to three alarms
+with selectable melodies, and is configured from a **mobile-friendly web interface** —
+no app needed. <a href="https://www.youtube.com/watch?v=uE2CU6pZ4Vk" target="_blank">Watch it in action</a>.
 
 <a href="https://www.youtube.com/watch?v=uE2CU6pZ4Vk" target="_blank"><img src="https://i.ytimg.com/vi/p9QBpXv5QZc/maxresdefault.jpg" width="500"></a>
+
+### Order
+
+Want one without soldering? Check the
+<a href="https://www.tindie.com/stores/gumslone/" target="_blank">gumslone store on Tindie</a> —
+or build your own: the firmware, web interface and 3D-printable enclosure are all in this repo.
 
 ### Features:
 - has a build in RTC (real time clock) chip, that allows accurate time readings when zifra is used in offline mode.
