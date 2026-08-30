@@ -341,7 +341,20 @@
         Object.keys(json).forEach(function (k) { info[k] = json[k]; });
         all('[data-info]').forEach(function (node) {
             var k = node.getAttribute('data-info');
-            if (info[k] !== undefined) node.textContent = String(info[k]);
+            if (info[k] === undefined) return;
+            var v = String(info[k]);
+            if (k === 'ipAddress' && /^[0-9a-fA-F.:]+$/.test(v)) {
+                // clickable: opens the clock directly by IP
+                node.textContent = '';
+                var a = document.createElement('a');
+                a.href = 'http://' + v + '/';
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.textContent = v;
+                node.appendChild(a);
+            } else {
+                node.textContent = v;
+            }
         });
         if (info.wifiSSID !== undefined) {
             el('homeWifi').textContent = info.wifiSSID +
