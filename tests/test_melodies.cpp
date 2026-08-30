@@ -3,8 +3,8 @@
 #include "test_framework.h"
 
 int main() {
-  CASE("four melodies, unknown indices fall back to classic");
-  CHECK(MELODY_COUNT == 4);
+  CASE("eight melodies, unknown indices fall back to classic");
+  CHECK(MELODY_COUNT == 8);
   CHECK(&melodyForIndex(-1) == &MELODIES[0]);
   CHECK(&melodyForIndex(99) == &MELODIES[0]);
   CHECK(&melodyForIndex(2) == &MELODIES[2]);
