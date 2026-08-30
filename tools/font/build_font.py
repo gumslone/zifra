@@ -38,12 +38,15 @@ def arc(c, r, a0, a1):
 
 SKELETONS = {
     "zero": [[arc((310, 350), 1.0, 90, 450)]],  # ellipse ring, see sample()
-    "one": [[line((190, 545), (330, 700)), line((330, 700), (330, 0))]],
+    # real nixie tubes show 1 as a plain vertical wire, no flag
+    "one": [[line((310, 700), (310, 0))]],
     "two": [[arc((310, 495), 190, 165, 15),
              line((494, 544), (95, 0)),
              line((95, 0), (530, 0))]],
-    "three": [[arc((300, 520), 180, 150, -90),
-               arc((300, 160), 180, 90, -150)]],
+    # Soviet tubes use the flat-top 3: bar, diagonal to the waist, bowl
+    "three": [[line((150, 700), (465, 700)),
+               line((465, 700), (330, 430)),
+               arc((295, 235), 198, 80, -160)]],
     "four": [[line((400, 700), (120, 240)), line((120, 240), (530, 240))],
              [line((400, 700), (400, 0))]],
     "five": [[line((490, 700), (155, 700)),
@@ -63,8 +66,9 @@ SKELETONS = {
     "period": [[line((180, 50), (180, 50))]],
 }
 
-# per-glyph advance overrides
-ADVANCES = {"colon": 520, "period": 360, "space": 420, "one": 560}
+# per-glyph advance overrides; digits all share ADVANCE so times are
+# tabular, like the fixed anode width of a real tube
+ADVANCES = {"colon": 520, "period": 360, "space": 420}
 
 # rings drawn as ellipses: (rx, ry) selected by the arc's r acting as a marker
 ELLIPSES = {
