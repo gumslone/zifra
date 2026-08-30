@@ -49,8 +49,9 @@ def arc(c, r, a0, a1):
 
 SKELETONS = {
     "zero": [[arc((310, 350), 1.0, 90, 450)]],  # ellipse ring, see sample()
-    # real nixie tubes show 1 as a plain vertical wire, no flag
-    "one": [[line((170, 700), (170, 0))]],
+    # real nixie tubes show 1 as a plain vertical wire, no flag; pull the
+    # endpoints in so the round caps stop at the 0's optical height
+    "one": [[line((170, 655), (170, 45))]],
     # round head starting low on the left, steep straight diagonal, flat base
     "two": [[arc((295, 510), 168, 162, 8),
              line((461, 533), (110, 0)),
