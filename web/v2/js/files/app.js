@@ -272,8 +272,7 @@
             var d = parseInt(chip.getAttribute('data-day'), 10);
             chip.classList.toggle('on', cfg.alarms[a].weekdays[d] === 1);
         });
-        el('homeSleep').textContent = cfg.clock_sleep && cfg.clock_sleep_start && cfg.clock_sleep_finish
-            ? cfg.clock_sleep_start + ' – ' + cfg.clock_sleep_finish : 'off';
+        renderSleepRow();
         renderNextAlarm();
     }
 
@@ -313,6 +312,32 @@
             out['alarm' + n + 'Weekdays'] = cfg.alarms[i].weekdays.join(',');
         }
         return out;
+    }
+
+    // Mirrors the firmware's sleep decision (sleep_logic.h) on browser time:
+    // is the tube inside its night-sleep window right now?
+    function sleepActiveNow() {
+        if (!cfg.clock_sleep || !cfg.clock_sleep_start || !cfg.clock_sleep_finish) return false;
+        function hhmm(s) { var p = s.split(':'); return parseInt(p[0], 10) * 100 + parseInt(p[1], 10); }
+        var now = new Date();
+        var t = now.getHours() * 100 + now.getMinutes();
+        var start = hhmm(cfg.clock_sleep_start);
+        var finish = hhmm(cfg.clock_sleep_finish);
+        if (Math.floor(start / 100) > Math.floor(finish / 100)) {
+            return t >= start || t <= finish; // window wraps past midnight
+        }
+        return t >= start && t <= finish;
+    }
+
+    function renderSleepRow() {
+        var node = el('homeSleep');
+        if (!(cfg.clock_sleep && cfg.clock_sleep_start && cfg.clock_sleep_finish)) {
+            node.textContent = 'off';
+            return;
+        }
+        node.textContent = sleepActiveNow()
+            ? 'asleep until ' + cfg.clock_sleep_finish
+            : cfg.clock_sleep_start + ' – ' + cfg.clock_sleep_finish;
     }
 
     function renderNextAlarm() {
@@ -468,6 +493,13 @@
         var slot = SLOTS[pos];
         var tube = el('tube');
         if (!tube) return;
+        if (sleepActiveNow()) {
+            // the real tube is dark right now - show that
+            tube.classList.add('dark');
+            el('tubeDot').classList.remove('lit');
+            setTimeout(function () { tubeStep(pos); }, 5000);
+            return;
+        }
         if (slot.off) {
             tube.classList.add('dark');
             el('tubeDot').classList.remove('lit');
@@ -534,7 +566,7 @@
     tubeStep(0);
     tickHero();
     setInterval(tickHero, 10000);
-    setInterval(renderNextAlarm, 60000);
+    setInterval(function () { renderNextAlarm(); renderSleepRow(); }, 60000);
     openSocket('main');
     openSocket('settime');
 
