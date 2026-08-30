@@ -19,6 +19,19 @@ a single digit nixie tube clock <a href="https://www.youtube.com/watch?v=uE2CU6p
 
 <img src="https://github.com/gumslone/zifra/blob/main/images/time.png?raw=true" width="210"> <img src="https://github.com/gumslone/zifra/blob/main/images/alarm.png?raw=true" width="210"> <img src="https://github.com/gumslone/zifra/blob/main/images/system.png?raw=true" width="210">
 
+### Firmware downloads
+
+The repo ships only the stock board's release binary,
+`firmware/zifra_esp8285.bin`. Every [release](https://github.com/gumslone/zifra/releases)
+carries all four variants as downloadable assets:
+
+- `zifra_esp8285_<version>.bin` — stock ZIFRA board (ESP8285)
+- `zifra_esp8266_generic_<version>.bin` — generic 1M ESP8266 modules (ESP-01S, ESP-12, ...)
+- `..._debug.bin` — same, with serial logging on 115200 baud
+
+Building locally with `./build.sh all` puts all four under
+`.build/<board>/<release|debug>/zifra.ino.bin`.
+
 ### Flashing over USB
 
 For the first flash (or to recover a clock that can't reach the web updater),
