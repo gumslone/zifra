@@ -10,11 +10,22 @@ Glyph set: 0-9, colon, hyphen, period, space - everything the clock UI shows.
 
 Usage:  python3 build_font.py <outdir>   (writes zifra-tube.ttf and .woff)
 """
+import json
 import math
+import os
 import sys
 
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
+
+# Digit shapes traced from a reference image by trace_ref.py; when present,
+# these override the hand-drawn digit skeletons below.
+TRACED_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "traced_skeletons.json")
+TRACED = {}
+if os.path.exists(TRACED_PATH):
+    with open(TRACED_PATH) as _f:
+        TRACED = json.load(_f)
 
 UPM = 1000        # units per em
 STROKE = 96       # stroke thickness
@@ -139,13 +150,19 @@ def draw_segment(pen, p1, p2):
 
 def build_glyph(name):
     pen = TTGlyphPen(None)
-    for si, stroke in enumerate(SKELETONS[name]):
-        pts = []
-        for part in stroke:
-            seg_pts = sample(name, si, part)
-            if pts and seg_pts and pts[-1] == seg_pts[0]:
-                seg_pts = seg_pts[1:]
-            pts.extend(seg_pts)
+    if name in TRACED:
+        strokes = [[(p[0], p[1]) for p in s] for s in TRACED[name]]
+    else:
+        strokes = []
+        for si, stroke in enumerate(SKELETONS[name]):
+            pts = []
+            for part in stroke:
+                seg_pts = sample(name, si, part)
+                if pts and seg_pts and pts[-1] == seg_pts[0]:
+                    seg_pts = seg_pts[1:]
+                pts.extend(seg_pts)
+            strokes.append(pts)
+    for pts in strokes:
         dot_r = R * 1.35 if len(pts) == 1 else R
         for p in pts:
             draw_circle(pen, p, dot_r)
