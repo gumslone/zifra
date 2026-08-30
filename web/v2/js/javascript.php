@@ -1,6 +1,7 @@
 <?php
 header("Content-type: text/javascript");
-// Expires in the past: clients always revalidate and get the current bundle
+// Never serve stale bundles: phones cache aggressively without this
+header("Cache-Control: no-cache, must-revalidate");
 header("Expires: " . gmdate("D, d M Y H:i:s", time() - 60 * 60 * 24 * 30) . " GMT");
 
 if (isset($_SERVER["HTTP_ACCEPT_ENCODING"]) && strstr($_SERVER["HTTP_ACCEPT_ENCODING"], "gzip")) {

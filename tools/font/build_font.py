@@ -66,17 +66,17 @@ SKELETONS = {
     "five": [[line((445, 700), (190, 700)),
               line((190, 700), (172, 480)),
               arc((310, 258), 216, 128, -162)]],
-    "six": [[arc((350, 460), 245, 85, 190),
-             line((109, 417), (139, 300)),
-             arc((300, 195), 175, 143, -217)]],
+    # one continuous flow: the tall hook meets the ring with matched tangents
+    "six": [[arc((736, 190), 586, 121.5, 180),
+             arc((320, 190), 170, 180, 540)]],
     # the stem bows gently left, like the reference tubes
     "seven": [[line((100, 700), (520, 700)),
                arc((1994, -308), 1786, 145.6, 170.1)]],
     "eight": [[arc((310, 510), 1.02, 90, 450)],
               [arc((310, 172), 1.08, 90, 450)]],
-    "nine": [[arc((320, 505), 178, 90, 450)],
-             [line((488, 442), (466, 447)),
-              arc((150, 320), 340, 22, -47)]],
+    # a 6 rotated 180 degrees, the same tangent-smooth joint
+    "nine": [[arc((-131, 510), 586, -58.5, 0),
+              arc((285, 510), 170, 0, 360)]],
     "colon": [[line((260, 460), (260, 460))], [line((260, 120), (260, 120))]],
     "hyphen": [[line((140, 300), (400, 300))]],
     "period": [[line((180, 50), (180, 50))]],

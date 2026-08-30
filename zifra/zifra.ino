@@ -194,9 +194,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             ip.toString() +
             " url: " + websocketConnection[num]);
 
-        // send message to client
-        SendInfo(true);
-        SendConfig();
+        // Send info and config straight to this client, whatever path it
+        // connected on - a page then needs only one socket, and a client
+        // that lost the path race still gets its data.
+        {
+          String info = GetInfo();
+          webSocket.sendTXT(num, info);
+          String config = zifra.conf.getConfig();
+          webSocket.sendTXT(num, config);
+        }
         break;
       }
     case WStype_TEXT: {
@@ -342,6 +348,10 @@ void setup() {
     server.begin();
 
     webSocket.begin();
+    // Ping clients and drop the dead ones: lingering half-closed sockets
+    // used to exhaust the 5 client slots and stall every broadcast for
+    // seconds on writes to peers that were long gone.
+    webSocket.enableHeartbeat(15000, 3000, 2);
     webSocket.onEvent(webSocketEvent);
     Log(F("Setup"), F("Webserver started"));
 

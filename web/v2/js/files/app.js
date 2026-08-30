@@ -428,7 +428,7 @@
         sockets.forEach(function (ws) {
             if (ws.readyState === WebSocket.OPEN) ws.send('KeepAlive');
         });
-    }, 1000);
+    }, 4000);
 
     function saveConfig() {
         var payload = JSON.stringify(configPayload());
