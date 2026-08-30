@@ -40,18 +40,21 @@ SKELETONS = {
     "zero": [[arc((310, 350), 1.0, 90, 450)]],  # ellipse ring, see sample()
     # real nixie tubes show 1 as a plain vertical wire, no flag
     "one": [[line((310, 700), (310, 0))]],
-    "two": [[arc((310, 495), 190, 165, 15),
-             line((494, 544), (95, 0)),
-             line((95, 0), (530, 0))]],
+    # round head starting low on the left, steep straight diagonal, flat base
+    "two": [[arc((295, 510), 168, 162, 8),
+             line((461, 533), (110, 0)),
+             line((110, 0), (500, 0))]],
     # Soviet tubes use the flat-top 3: bar, diagonal to the waist, bowl
     "three": [[line((150, 700), (465, 700)),
                line((465, 700), (330, 430)),
                arc((295, 235), 198, 80, -160)]],
-    "four": [[line((400, 700), (120, 240)), line((120, 240), (530, 240))],
-             [line((400, 700), (400, 0))]],
-    "five": [[line((490, 700), (155, 700)),
-              line((155, 700), (155, 435)),
-              arc((310, 240), 195, 95, -160)]],
+    # apex-topped 4: steep diagonal from the peak, long crossbar, center-right stem
+    "four": [[line((430, 700), (112, 235)), line((112, 235), (548, 235))],
+             [line((430, 700), (430, 0))]],
+    # short bar flowing almost directly into a big round belly, like the tubes
+    "five": [[line((445, 700), (190, 700)),
+              line((190, 700), (172, 480)),
+              arc((310, 258), 216, 128, -162)]],
     "six": [[arc((350, 460), 245, 85, 190),
              line((109, 417), (139, 300)),
              arc((300, 195), 175, 143, -217)]],
@@ -62,7 +65,7 @@ SKELETONS = {
               [arc((310, 172), 1.08, 90, 450)]],
     "nine": [[arc((320, 505), 178, 90, 450)],
              [line((488, 442), (466, 447)),
-              arc((150, 320), 340, 22, -42)]],
+              arc((150, 320), 340, 22, -47)]],
     "colon": [[line((260, 460), (260, 460))], [line((260, 120), (260, 120))]],
     "hyphen": [[line((140, 300), (400, 300))]],
     "period": [[line((180, 50), (180, 50))]],
