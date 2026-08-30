@@ -160,6 +160,17 @@ class CurrentTime {
     {
       m_webTime.setTimeOffset(m_conf.utcOffsetInSeconds);
     }
+    // Re-applies the config's time settings at runtime (no restart needed):
+    // fresh UTC offset and NTP server, then an immediate resync.
+    void applySettings()
+    {
+      m_webTime.setTimeOffset(m_conf.utcOffsetInSeconds);
+      m_webTime.setPoolServerName(m_conf.ntpServer.c_str());
+      if (m_conf.wifiActive) {
+        m_webTime.forceUpdate();
+        update();
+      }
+    }
     void begin()
     {
       m_webTime.begin();

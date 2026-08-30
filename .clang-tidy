@@ -21,4 +21,4 @@ Checks: >
   -bugprone-implicit-widening-of-multiplication-result
 # Filename-based so it keeps matching after any directory reshuffle; scoped to
 # the project's own logic headers (not the test shims, not vendored libs).
-HeaderFilterRegex: '(zifra_types|sleep_logic|alarm_logic|zifra_clock_timer|common_functions)\.h$'
+HeaderFilterRegex: '(zifra_types|sleep_logic|alarm_logic|zifra_clock_timer|common_functions|melodies)\.h$'

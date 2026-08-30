@@ -13,6 +13,7 @@ struct AlarmProperties {
   bool fired{false};
   unsigned long fireTime{0};
   bool active{false};
+  int melody{0}; // index into MELODIES (melodies.h)
 };
 
 struct Clock {

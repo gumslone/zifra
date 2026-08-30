@@ -23,7 +23,12 @@ public:
 
   void setUp()
   {
-    conf.setCb([&]() { time.setRTC(); });
+    // Runs whenever the web UI saves new time settings: re-apply them live
+    // and persist the fresh time to the DS3231.
+    conf.setCb([&]() {
+      time.applySettings();
+      time.setRTC();
+    });
     time.setTimeOffset();
   }
   bool sleep() {

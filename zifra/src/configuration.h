@@ -44,6 +44,7 @@ class ZifraConfig {
           json[prefix + "Weekdays"] = join(alarms[i].weekdays, ",", 7);
           json[prefix + "Active"] = alarms[i].active;
           json[prefix + "Time"] = alarms[i].time;
+          json[prefix + "Melody"] = alarms[i].melody;
         }
 
         File configFile = SPIFFS.open("/config.json", "w");
@@ -91,13 +92,13 @@ class ZifraConfig {
       }
     }
 
+    // Applies and saves the new config. No restart: everything the clock
+    // does reads the live config, and the time settings are re-applied
+    // through the callback below.
     void setConfig(JsonObject &json) {
       setConfigParameters(json);
       saveConfigCallback();
       saveConfig();
-
-      delay(1000);
-      ESP.restart();
     }
 
     String getConfig() {
@@ -141,9 +142,6 @@ class ZifraConfig {
         }
         D_println();
       }
-      if (json.containsKey("utcOffsetInSeconds")) {
-        callback();
-      }
       setData(json, "wifiActive", wifiActive);
       setData(json, "utcOffsetInSeconds", utcOffsetInSeconds);
       setData(json, "ntpServer", ntpServer);
@@ -162,6 +160,13 @@ class ZifraConfig {
         }
         setData(json, prefix + "Active", alarms[i].active);
         setData(json, prefix + "Time", alarms[i].time);
+        setData(json, prefix + "Melody", alarms[i].melody);
+      }
+
+      // After the new values are in place, let the owner re-apply the ones
+      // that need it (NTP offset/server) - the reason saving used to reboot.
+      if (json.containsKey("utcOffsetInSeconds") || json.containsKey("ntpServer")) {
+        callback();
       }
     }
 

@@ -261,6 +261,44 @@ input:focus {
     background: var(--bg);
 }
 
+/* Alarm sound picker */
+
+select {
+    font: inherit;
+    color: var(--text);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    min-height: 44px;
+    color-scheme: dark;
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--glow);
+    box-shadow: 0 0 0 3px rgba(242, 190, 68, .25);
+}
+
+.sound-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--divider);
+}
+
+.sound-row select { flex-grow: 1; }
+
+.btn.preview-btn {
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.btn.preview-btn svg { width: 16px; height: 16px; }
+
 /* Weekday chips */
 
 .weekdays { display: flex; gap: 8px; padding: 4px 0; }

@@ -211,6 +211,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
           if (websocketConnection[num] == "/setConfig") {
             JsonObject object = json.as<JsonObject>();
             zifra.conf.setConfig(object);
+            Log(F("Config"), F("Saved and applied"));
+            // push the fresh config to connected settings pages
+            SendConfig();
           }
         }
         break;

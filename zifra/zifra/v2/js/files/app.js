@@ -3,7 +3,7 @@
  * Vanilla JS, no dependencies. Talks the same websocket protocol as v1:
  *   ws://<clock>:81/main      -> system info + live log
  *   ws://<clock>:81/settime   -> config JSON on connect
- *   ws://<clock>:81/setConfig -> send config JSON, clock saves + restarts
+ *   ws://<clock>:81/setConfig -> send config JSON, clock saves + applies it
  */
 (function () {
     'use strict';
@@ -12,11 +12,21 @@
     var DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+    // Mirrors MELODIES in the firmware's melodies.h ([freq, ms]; freq 0 = rest)
+    var MELODY_NAMES = ['Classic', 'Double beep', 'Siren', 'Chime'];
+    var MELODY_NOTES = [
+        [[500, 180], [780, 180]],
+        [[880, 150], [0, 150], [880, 150], [0, 600]],
+        [[400, 150], [520, 150], [660, 150], [780, 150], [660, 150], [520, 150]],
+        [[523, 200], [659, 200], [784, 200], [1047, 400], [0, 420]]
+    ];
+
     var ICONS = {
         home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>',
         clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15.5 13.5"></polyline></svg>',
         bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>',
         cpu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="12" y1="1" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="23"></line><line x1="1" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="23" y2="12"></line></svg>',
+        play: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 4 20 12 7 20"></polygon></svg>',
         chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>',
         upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>'
     };
@@ -32,9 +42,9 @@
         clock_sleep_start: '',
         clock_sleep_finish: '',
         alarms: [
-            { time: '', active: false, weekdays: [0, 0, 0, 0, 0, 0, 0] },
-            { time: '', active: false, weekdays: [0, 0, 0, 0, 0, 0, 0] },
-            { time: '', active: false, weekdays: [0, 0, 0, 0, 0, 0, 0] }
+            { time: '', active: false, melody: 0, weekdays: [0, 0, 0, 0, 0, 0, 0] },
+            { time: '', active: false, melody: 0, weekdays: [0, 0, 0, 0, 0, 0, 0] },
+            { time: '', active: false, melody: 0, weekdays: [0, 0, 0, 0, 0, 0, 0] }
         ]
     };
     var info = {};
@@ -52,6 +62,10 @@
             chips += '<button class="chip" data-alarm="' + i + '" data-day="' + d +
                      '" aria-label="' + DAY_NAMES[d] + '">' + DAY_LETTERS[d] + '</button>';
         }
+        var options = '';
+        for (var m = 0; m < MELODY_NAMES.length; m++) {
+            options += '<option value="' + m + '">' + MELODY_NAMES[m] + '</option>';
+        }
         return '' +
         '<div class="card alarm-card" id="alarmCard' + i + '">' +
           '<div class="alarm-head">' +
@@ -59,6 +73,11 @@
             '<label class="switch"><input type="checkbox" id="alarm' + i + 'Active"><span class="knob"></span></label>' +
           '</div>' +
           '<div class="weekdays">' + chips + '</div>' +
+          '<div class="sound-row">' +
+            '<span class="value">Sound</span>' +
+            '<select id="alarm' + i + 'Melody">' + options + '</select>' +
+            '<button class="btn preview-btn" data-preview="' + i + '" aria-label="Preview sound">' + ICONS.play + '</button>' +
+          '</div>' +
         '</div>';
     }
 
@@ -117,14 +136,14 @@
             '<div class="hint">Tube off during the window (may span midnight) &mdash; saves IN-12B life. Top button wakes it for 3 minutes.</div>' +
           '</div>' +
           '<div class="save-area"><button class="btn primary" data-save>Save changes</button>' +
-          '<div class="hint">Saving restarts the clock &mdash; back online in a few seconds</div></div>' +
+          '<div class="hint">Changes apply instantly &mdash; no restart</div></div>' +
         '</section>' +
 
         '<section class="screen" data-screen="alarms">' +
           alarmHtml(0) + alarmHtml(1) + alarmHtml(2) +
-          '<div class="hint" style="padding:0 4px;">Rings a two-tone signal for up to 10 minutes. Press either button on the clock to mute.</div>' +
+          '<div class="hint" style="padding:0 4px;">Rings its melody for up to 10 minutes. Press either button on the clock to mute.</div>' +
           '<div class="save-area"><button class="btn primary" data-save>Save changes</button>' +
-          '<div class="hint">Saving restarts the clock &mdash; back online in a few seconds</div></div>' +
+          '<div class="hint">Changes apply instantly &mdash; no restart</div></div>' +
         '</section>' +
 
         '<section class="screen" data-screen="system">' +
@@ -164,8 +183,8 @@
         '</nav>' +
 
         '<div class="overlay" id="overlay"><div class="box">' +
-          '<h3>Config saved!</h3>' +
-          '<p>The clock is restarting &mdash; this page reloads in <span class="count" id="count">12</span> seconds.</p>' +
+          '<h3>Config saved</h3>' +
+          '<p>Applied instantly &mdash; no restart needed.</p>' +
         '</div></div>';
     }
 
@@ -206,6 +225,7 @@
             var n = i + 1;
             if (json['alarm' + n + 'Time'] !== undefined) cfg.alarms[i].time = String(json['alarm' + n + 'Time']);
             if (json['alarm' + n + 'Active'] !== undefined) cfg.alarms[i].active = !!json['alarm' + n + 'Active'];
+            if (json['alarm' + n + 'Melody'] !== undefined) cfg.alarms[i].melody = parseInt(json['alarm' + n + 'Melody'], 10) || 0;
             if (json['alarm' + n + 'Weekdays'] !== undefined) {
                 var parts = String(json['alarm' + n + 'Weekdays']).split(',');
                 for (var d = 0; d < 7; d++) cfg.alarms[i].weekdays[d] = parts[d] === '1' ? 1 : 0;
@@ -225,6 +245,7 @@
         for (var i = 0; i < 3; i++) {
             el('alarm' + i + 'Time').value = cfg.alarms[i].time;
             el('alarm' + i + 'Active').checked = cfg.alarms[i].active;
+            el('alarm' + i + 'Melody').value = cfg.alarms[i].melody;
             el('alarmCard' + i).classList.toggle('off', !cfg.alarms[i].active);
         }
         all('.chip').forEach(function (chip) {
@@ -248,6 +269,7 @@
         for (var i = 0; i < 3; i++) {
             cfg.alarms[i].time = el('alarm' + i + 'Time').value;
             cfg.alarms[i].active = el('alarm' + i + 'Active').checked;
+            cfg.alarms[i].melody = parseInt(el('alarm' + i + 'Melody').value, 10) || 0;
         }
     }
 
@@ -266,6 +288,7 @@
             var n = i + 1;
             out['alarm' + n + 'Time'] = cfg.alarms[i].time;
             out['alarm' + n + 'Active'] = cfg.alarms[i].active;
+            out['alarm' + n + 'Melody'] = cfg.alarms[i].melody;
             out['alarm' + n + 'Weekdays'] = cfg.alarms[i].weekdays.join(',');
         }
         return out;
@@ -350,18 +373,52 @@
 
     function saveConfig() {
         var payload = JSON.stringify(configPayload());
+        renderConfig();
         var overlay = el('overlay');
         overlay.classList.add('show');
-        var left = 12;
-        el('count').textContent = left;
-        var timer = setInterval(function () {
-            left--;
-            el('count').textContent = left;
-            if (left <= 0) { clearInterval(timer); location.reload(); }
-        }, 1000);
+        setTimeout(function () { overlay.classList.remove('show'); }, 1800);
         if (!HOST) return;
         var ws = new WebSocket('ws://' + HOST + ':81/setConfig');
         ws.onopen = function () { ws.send(payload); ws.close(); };
+    }
+
+    // ---- melody preview (WebAudio approximation of the piezo) -------------
+
+    var audioCtx = null;
+    var previewOsc = null;
+
+    function previewMelody(index) {
+        if (previewOsc) {
+            try { previewOsc.stop(); } catch (e) {}
+            previewOsc = null;
+        }
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        if (!audioCtx) audioCtx = new AC();
+        if (audioCtx.resume) audioCtx.resume();
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        var notes = MELODY_NOTES[index] || MELODY_NOTES[0];
+        var t = audioCtx.currentTime;
+        gain.gain.setValueAtTime(0, t);
+        for (var loop = 0; loop < 2; loop++) {
+            for (var n = 0; n < notes.length; n++) {
+                if (notes[n][0] > 0) {
+                    osc.frequency.setValueAtTime(notes[n][0], t);
+                    gain.gain.setValueAtTime(0.08, t);
+                } else {
+                    gain.gain.setValueAtTime(0, t);
+                }
+                t += notes[n][1] / 1000;
+            }
+        }
+        gain.gain.setValueAtTime(0, t);
+        osc.start();
+        osc.stop(t + 0.05);
+        previewOsc = osc;
     }
 
     // ---- tube demo (same timings as zifra_clock_timer.h) ------------------
@@ -422,6 +479,12 @@
             })(i);
         }
         all('[data-save]').forEach(function (b) { b.addEventListener('click', saveConfig); });
+        all('[data-preview]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                var i = parseInt(b.getAttribute('data-preview'), 10);
+                previewMelody(parseInt(el('alarm' + i + 'Melody').value, 10) || 0);
+            });
+        });
         el('phoneOffset').addEventListener('click', function () {
             el('utcOffsetInSeconds').value = -(new Date().getTimezoneOffset() * 60);
         });

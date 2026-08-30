@@ -1,5 +1,6 @@
 #pragma once
 #include "alarm_logic.h"
+#include "melodies.h"
 #ifndef _Zifra_Alarm_
 #define _Zifra_Alarm_
 
@@ -16,6 +17,7 @@ class ZifraAlarm {
       for (auto &alarm : m_conf.alarms) {
         alarm.fired = false;
       }
+      m_ringing = false;
       noTone(BUZZER_PIN);
     }
 
@@ -23,7 +25,9 @@ class ZifraAlarm {
     static constexpr unsigned long ALARM_DURATION_MINUTES = 10;
     ZifraConfig & m_conf;
     CurrentTime & m_time;
-    bool m_alarmSound{false};
+    bool m_ringing{false};
+    uint8_t m_lastNote{255};
+    unsigned long m_ringStart{0};
 
     void activateAlarms() {
       const String currentTime =
@@ -50,18 +54,40 @@ class ZifraAlarm {
         }
       }
     }
-    bool anyFired() const {
+    const AlarmProperties *firstRinging() const {
       for (const auto &alarm : m_conf.alarms) {
         if (alarm.fired) {
-          return true;
+          return &alarm;
         }
       }
-      return false;
+      return nullptr;
     }
+    // Plays the ringing alarm's melody (melodies.h), advancing on the
+    // display tick. When several alarms ring at once, the first one's
+    // melody wins.
     void playAlarm() {
-      if (anyFired()) {
-        tone(BUZZER_PIN, m_alarmSound ? 780 : 500, 180);
-        m_alarmSound = !m_alarmSound;
+      const AlarmProperties *ringing = firstRinging();
+      if (ringing == nullptr) {
+        if (m_ringing) {
+          m_ringing = false;
+          noTone(BUZZER_PIN);
+        }
+        return;
+      }
+      if (!m_ringing) {
+        m_ringing = true;
+        m_ringStart = millis();
+        m_lastNote = 255;
+      }
+      const Melody &melody = melodyForIndex(ringing->melody);
+      const uint8_t note = melodyNoteIndexAt(melody, millis() - m_ringStart);
+      if (note != m_lastNote) {
+        m_lastNote = note;
+        if (melody.notes[note].freq != 0) {
+          tone(BUZZER_PIN, melody.notes[note].freq, melody.notes[note].ms);
+        } else {
+          noTone(BUZZER_PIN);
+        }
       }
     }
 };
