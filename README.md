@@ -17,19 +17,59 @@ Want one without soldering? Check the
 or build your own: the firmware, web interface and 3D-printable enclosure are all in this repo.
 
 ### Features:
-- has a build in RTC (real time clock) chip, that allows accurate time readings when zifra is used in offline mode.
-- uses Network Time Protocol (NTP) for very accurate time reading in online mode.
+- built-in RTC (real-time clock) chip for accurate time when ZIFRA is used offline.
+- Network Time Protocol (NTP) for very accurate time in online mode.
 - automatic summer/winter time switching (European and US daylight-saving rules).
-- has build in buzzer to setup an alarm (you can set up to 3 alarms) (shake zifra to turn off the alarm)
-- set a sleep time to turn of the nixie tube at night (shake to show time for a duration of 3 minutes during sleep time)
-- mobile-friendly configuration web interface that can be accessed via web browser http://zifra.local
-- update the clock to the latest firmware through the web interface
+- built-in buzzer with up to 3 alarms and selectable melodies (shake ZIFRA to mute a ringing alarm).
+- night sleep window that turns the nixie tube off at night (shake to show the time for 3 minutes during sleep).
+- mobile-friendly configuration web interface, reachable at http://zifra.local — no app needed.
+- firmware updates over WiFi, straight from the web interface.
 
 ### Web interface
 
 <img src="https://github.com/gumslone/zifra/blob/main/images/web.png?raw=true" width="640">
 
 <img src="https://github.com/gumslone/zifra/blob/main/images/time.png?raw=true" width="210"> <img src="https://github.com/gumslone/zifra/blob/main/images/alarm.png?raw=true" width="210"> <img src="https://github.com/gumslone/zifra/blob/main/images/system.png?raw=true" width="210">
+
+### First-time setup
+
+1. **Power the clock** with a 5 V USB power supply. On the first boot the tube cycles
+   once through all digits and the buzzer plays a short jingle.
+2. **Connect it to your WiFi.** With no network configured, ZIFRA opens its own
+   access point named `ZIFRA-XXXXXX`. Join it with your phone and the setup portal
+   opens by itself (if not, browse to `192.168.4.1`). Pick your network, enter the
+   password, and save — the clock reboots and joins your WiFi. The portal stays up
+   for 3 minutes; after that the clock restarts and tries again.
+3. **Open the web interface** at http://zifra.local (or the clock's IP address,
+   which your router's device list shows). The dashboard displays the firmware
+   version, WiFi quality, IP and a live demo of what the tube is doing.
+4. **Set your time zone** on the *Clock* page: tap *Set offset from this phone*, pick
+   your summer/winter rule (Europe/USA) — with automatic switching on, the stored
+   offset is the winter (standard) time and the clock adds the summer hour itself.
+   Saving applies instantly, no restart needed.
+
+No WiFi where the clock lives? Configure it once anywhere, then it keeps time on its
+DS3231 RTC even with WiFi off.
+
+### Everyday use
+
+- **Reading the time** — the single tube spells the time digit by digit:
+  hours' tens, hours' ones, then (with the decimal dot lit) minutes' tens and
+  minutes' ones, followed by a longer dark pause before the next round. With the
+  leading zero turned off, `09:41` starts straight at the `9` and reads one digit
+  sooner.
+- **Alarms** — up to three, each with its own weekdays and melody (preview the
+  melodies right in the web UI). A ringing alarm stops when muted or after the
+  configurable auto-stop time. **Shake the clock or press its button to mute.**
+- **Night sleep** — the tube goes dark during the configured window (it may span
+  midnight, e.g. 22:00–06:30). Shake the clock to light the time up for 3 minutes.
+  The dashboard shows when the clock is asleep.
+- **WiFi on/off** — shake the clock continuously for about 10 seconds to toggle
+  WiFi (it restarts and runs offline from the RTC).
+- **Factory reset** — hold the button for 35 seconds: settings and WiFi
+  credentials are wiped and the setup portal opens again.
+- **Firmware updates** — pick a release `.bin` on the *System* page and flash it
+  right there, over WiFi. Settings survive updates.
 
 ### Firmware downloads
 
@@ -66,3 +106,56 @@ Then, from the repo root:
 ./flash.sh -l     # list detected serial ports
 ./bugzapper.sh    # GUI flasher + serial monitor (needs python3 with tkinter)
 ```
+
+### Development
+
+The firmware is a single Arduino sketch ([`zifra/zifra.ino`](zifra/zifra.ino)) with
+its modules as headers under [`zifra/src/`](zifra/src) — pure logic (alarms, sleep
+window, melodies, daylight-saving rules) is separated from hardware code so it can
+be tested on the host:
+
+```sh
+./build.sh all     # arduino-cli builds: esp8285 + generic, release + debug
+pio run            # or build with PlatformIO
+./tests/run.sh     # native host tests, no board needed
+./tests/tidy.sh    # clang-tidy static analysis
+```
+
+The web interface lives in [`web/v2/`](web/v2) — a dependency-free ES6 single-page
+app in layered modules (`core` / `state` / `view` / `audio` / `app`), bundled and
+gzipped by two small PHP scripts. The pages the clock serves itself (dashboard
+redirect and the `/update` fallback) are in [`zifra/pages/`](zifra/pages);
+`tools/web/gzip_pages.py` regenerates them as compressed PROGMEM arrays. The
+"Zifra Tube" nixie webfont the UI uses is generated by
+[`tools/font/build_font.py`](tools/font/build_font.py). CI builds every push and
+publishes tagged releases from `zifra/src/version.h`.
+
+### A short history of the nixie tube
+
+Long before LEDs, numbers glowed in neon. The **nixie tube** is a cold-cathode
+display from the 1950s: a glass envelope filled with neon holds a stack of ten
+thin metal cathodes, each shaped like a digit, behind a wire-mesh anode. Apply
+~170 V to one cathode and the gas around it ionizes — the digit is wrapped in the
+soft orange glow of the neon discharge. Because the digits sit physically behind
+one another, each one lights at its own depth inside the glass, which gives nixies
+their unmistakable, slightly floating look.
+
+Burroughs Corporation trademarked the name **Nixie** (from "Numeric Indicator
+eXperimental No. 1") in 1955, and through the 1960s nixies were *the* readout of
+serious machines: frequency counters, multimeters, desktop calculators, elevator
+floor indicators, even mission-control consoles. By the mid-1970s cheaper,
+lower-voltage vacuum-fluorescent displays and LEDs had displaced them in the
+West — but factories in the Soviet Union kept producing their own **ИН (IN)
+series** in enormous numbers well into the 1980s.
+
+The tube in ZIFRA is one of those: the **IN-12B (ИН-12Б)**, a side-viewed nixie
+with 18 mm digits and a decimal point on the left, made by Reflector in Saratov
+and other Soviet plants. Unsocketed "new old stock" tubes still surface from old
+warehouses, which is what keeps nixie clocks alive today — nobody mass-produces
+nixies anymore, so every tube is decades old and finite. That scarcity is also why
+ZIFRA uses a **single tube** that spells the time digit by digit instead of four
+in a row: one tube to source, one tube to someday replace, and a clock that makes
+a little ceremony out of every minute. The night-sleep window exists for the same
+reason — a resting tube is a tube that lasts: powered sensibly, an IN-12B is good
+for years of continuous glow, and cycling through all ten digits (as ZIFRA does at
+startup) helps keep unused cathodes clean.
