@@ -15,9 +15,15 @@ class WebService {
       : m_zifra(zifra), m_server(80), m_webSocket(81) {}
 
     void begin() {
+      // Registered before the updater so this styled page wins GET /update;
+      // the updater's POST /update handler still does the flashing.
+      m_server.on(F("/update"), HTTP_GET, [this]() {
+        sendPage(UPDATE_PAGE_GZ, UPDATE_PAGE_GZ_LEN);
+      });
       m_updater.setup(&m_server);
-      m_server.on(F("/update"), HTTP_GET, [this]() { handleNotFound(); });
-      m_server.on(F("/"), HTTP_GET, [this]() { handleMainPage(); });
+      m_server.on(F("/"), HTTP_GET, [this]() {
+        sendPage(MAIN_PAGE_GZ, MAIN_PAGE_GZ_LEN);
+      });
       m_server.onNotFound([this]() { handleNotFound(); });
       m_server.begin();
 
@@ -167,9 +173,12 @@ class WebService {
       }
     }
 
-    void handleMainPage() {
+    // Sends one of the pre-gzipped pages from Webinterface.h. Every browser
+    // accepts gzip, so no Accept-Encoding check is needed.
+    void sendPage(const uint8_t *gz, size_t len) {
       m_server.sendHeader("Connection", "close");
-      m_server.send(200, "text/html", mainPage);
+      m_server.sendHeader("Content-Encoding", "gzip");
+      m_server.send_P(200, "text/html", reinterpret_cast<const char *>(gz), len);
     }
 
     void handleNotFound() {

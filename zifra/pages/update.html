@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZIFRA firmware update</title>
+<style>
+:root{--glow:#f2be44;--glow-deep:#f45404;--bg:#14110c;--panel:#1c1813;--border:#3a332a;
+--text:#e8e0d0;--muted:#9a8f7c;--input-bg:#211c15;--input-border:#4a4036;--ok:#34c07c;--bad:#e05d44}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+padding:24px;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
+.card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--border);
+border-radius:8px;padding:28px 24px;text-align:center}
+h1{margin:0;font-size:26px;letter-spacing:1px;color:var(--glow);
+text-shadow:0 0 7px var(--glow),0 0 21px var(--glow),0 0 42px var(--glow-deep)}
+.sub{margin:4px 0 20px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.file{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 16px;
+border:1px dashed var(--input-border);border-radius:6px;background:var(--input-bg);
+color:var(--muted);font-size:14px;cursor:pointer;word-break:break-all}
+.file.picked{border-style:solid;border-color:var(--glow);color:var(--glow)}
+.file input{display:none}
+button{width:100%;margin-top:14px;min-height:48px;border:none;border-radius:6px;cursor:pointer;
+background:var(--glow);color:var(--bg);font:inherit;font-size:15px;font-weight:700;
+box-shadow:0 0 16px rgba(242,190,68,.35)}
+button:disabled{background:var(--input-bg);color:var(--muted);box-shadow:none;
+border:1px solid var(--input-border);cursor:default}
+.bar{margin-top:16px;height:8px;border-radius:4px;background:var(--input-bg);
+border:1px solid var(--input-border);overflow:hidden}
+.bar div{height:100%;width:0;background:var(--glow);box-shadow:0 0 8px var(--glow);transition:width .2s}
+.hint{margin:14px 0 0;font-size:12px;line-height:1.5;color:var(--muted)}
+.hint.ok{color:var(--ok)}.hint.bad{color:var(--bad)}
+a{color:var(--glow)}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>ZIFRA</h1>
+<p class="sub">Firmware update</p>
+<label class="file" id="drop"><input type="file" id="file" accept=".bin"><span id="fname">Choose firmware .bin&hellip;</span></label>
+<button id="go" disabled>Flash firmware</button>
+<div class="bar" hidden id="bar"><div id="fill"></div></div>
+<p class="hint" id="msg">Flashed over WiFi &mdash; the clock keeps its settings. Don't unplug while flashing.</p>
+</div>
+<script>
+var file=document.getElementById('file'),go=document.getElementById('go'),
+bar=document.getElementById('bar'),fill=document.getElementById('fill'),
+msg=document.getElementById('msg'),fname=document.getElementById('fname'),
+drop=document.getElementById('drop');
+file.addEventListener('change',function(){
+  if(!file.files.length)return;
+  fname.textContent=file.files[0].name;
+  drop.className='file picked';
+  go.disabled=false;
+});
+go.addEventListener('click',function(){
+  if(!file.files.length)return;
+  go.disabled=true;bar.hidden=false;
+  msg.className='hint';msg.textContent='Flashing… don’t unplug the clock.';
+  var fd=new FormData();fd.append('update',file.files[0]);
+  var xhr=new XMLHttpRequest();
+  xhr.open('POST','/update');
+  xhr.upload.onprogress=function(e){
+    if(e.lengthComputable)fill.style.width=Math.round(e.loaded/e.total*100)+'%';
+  };
+  xhr.onload=function(){
+    if(xhr.status===200&&xhr.responseText.indexOf('Success')>=0){
+      fill.style.width='100%';
+      msg.className='hint ok';
+      msg.textContent='Update done — the clock is rebooting. Back to the dashboard in a moment…';
+      setTimeout(function(){location.href='/'},15000);
+    }else{
+      msg.className='hint bad';
+      msg.textContent='Update failed — the clock kept its old firmware. Check the .bin and try again.';
+      go.disabled=false;
+    }
+  };
+  xhr.onerror=function(){
+    msg.className='hint bad';
+    msg.textContent='Connection lost — if the flash finished, the clock is rebooting.';
+  };
+  xhr.send(fd);
+});
+</script>
+</body>
+</html>
