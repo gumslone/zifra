@@ -222,6 +222,30 @@ input:focus {
     box-shadow: 0 0 0 3px rgba(242, 190, 68, .25);
 }
 
+/* 12h sleep-time editor: hour/minute inputs plus an AM/PM select,
+   shown instead of the native time input when the 12h clock is on */
+.time12 { display: flex; align-items: center; gap: 8px; }
+.time12[hidden] { display: none; }
+.time12 input {
+    font-family: 'Zifra Tube', 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 22px;
+    color: var(--glow);
+    text-align: center;
+    width: 76px;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+.time12 input::-webkit-outer-spin-button,
+.time12 input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.time12 .colon {
+    font-family: 'Zifra Tube', 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 22px;
+    color: var(--glow);
+}
+.time12 select { flex: 1; min-width: 76px; }
+
 .field { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; }
 .field-label { font-size: 13px; color: var(--muted); }
 .two-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }

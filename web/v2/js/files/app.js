@@ -91,6 +91,19 @@
         '</div>';
     }
 
+    // The native time input always follows the browser locale, so the 12h
+    // clock setting gets its own hour/minute/AM-PM editor; values are
+    // converted back to 24h HH:MM before they reach the firmware.
+    function sleepTimeHtml(id) {
+        return '<input type="time" id="' + id + '">' +
+            '<span class="time12" id="' + id + '_12" hidden>' +
+              '<input type="number" id="' + id + '_h" min="1" max="12" inputmode="numeric" placeholder="--">' +
+              '<span class="colon">:</span>' +
+              '<input type="number" id="' + id + '_m" min="0" max="59" inputmode="numeric" placeholder="--">' +
+              '<select id="' + id + '_ap"><option value="AM">AM</option><option value="PM">PM</option></select>' +
+            '</span>';
+    }
+
     function render() {
         document.getElementById('app').innerHTML = '' +
         '<div class="appbar">' +
@@ -147,8 +160,8 @@
             '<div class="row" style="min-height:0;"><span class="card-title" style="margin:0;">Night sleep</span>' +
               '<label class="switch"><input type="checkbox" id="clock_sleep"><span class="knob"></span></label></div>' +
             '<div class="two-cols">' +
-              '<div class="field"><span class="field-label">Begin</span><input type="time" id="clock_sleep_start"></div>' +
-              '<div class="field"><span class="field-label">End</span><input type="time" id="clock_sleep_finish"></div>' +
+              '<div class="field"><span class="field-label">Begin</span>' + sleepTimeHtml('clock_sleep_start') + '</div>' +
+              '<div class="field"><span class="field-label">End</span>' + sleepTimeHtml('clock_sleep_finish') + '</div>' +
             '</div>' +
             '<div class="hint">Tube off during the window (may span midnight) &mdash; saves IN-12B life. Top button wakes it for 3 minutes.</div>' +
           '</div>' +
@@ -234,6 +247,43 @@
 
     function pad(n) { return (n < 10 ? '0' : '') + n; }
 
+    // ---- 12h <-> 24h ------------------------------------------------------
+
+    function to12(t) {
+        var p = String(t).split(':');
+        var h = parseInt(p[0], 10), m = parseInt(p[1], 10);
+        if (isNaN(h) || isNaN(m)) return null;
+        return { h: (h % 12) || 12, m: m, pm: h >= 12 };
+    }
+
+    function from12(h, m, pm) {
+        if (isNaN(h) || isNaN(m) || h < 1 || h > 12 || m < 0 || m > 59) return '';
+        return pad((h % 12) + (pm ? 12 : 0)) + ':' + pad(m);
+    }
+
+    function fmtTime(t) {
+        if (!cfg.clock_12h) return t;
+        var v = to12(t);
+        return v ? v.h + ':' + pad(v.m) + ' ' + (v.pm ? 'PM' : 'AM') : t;
+    }
+
+    function fillSleepInput(id) {
+        el(id).value = cfg[id];
+        var v = to12(cfg[id]);
+        el(id + '_h').value = v ? v.h : '';
+        el(id + '_m').value = v ? pad(v.m) : '';
+        el(id + '_ap').value = v && v.pm ? 'PM' : 'AM';
+        el(id).hidden = cfg.clock_12h;
+        el(id + '_12').hidden = !cfg.clock_12h;
+    }
+
+    function readSleepInput(id, is12) {
+        if (!is12) return el(id).value;
+        var h = parseInt(el(id + '_h').value, 10);
+        var m = parseInt(el(id + '_m').value, 10);
+        return from12(h, m, el(id + '_ap').value === 'PM');
+    }
+
     // ---- config <-> form --------------------------------------------------
 
     function applyConfig(json) {
@@ -267,8 +317,8 @@
         el('clock_12h').checked = cfg.clock_12h;
         el('clock_leading_hour_zero').checked = cfg.clock_leading_hour_zero;
         el('clock_sleep').checked = cfg.clock_sleep;
-        el('clock_sleep_start').value = cfg.clock_sleep_start;
-        el('clock_sleep_finish').value = cfg.clock_sleep_finish;
+        fillSleepInput('clock_sleep_start');
+        fillSleepInput('clock_sleep_finish');
         for (var i = 0; i < 3; i++) {
             el('alarm' + i + 'Time').value = cfg.alarms[i].time;
             el('alarm' + i + 'Active').checked = cfg.alarms[i].active;
@@ -292,8 +342,8 @@
         cfg.clock_12h = el('clock_12h').checked;
         cfg.clock_leading_hour_zero = el('clock_leading_hour_zero').checked;
         cfg.clock_sleep = el('clock_sleep').checked;
-        cfg.clock_sleep_start = el('clock_sleep_start').value;
-        cfg.clock_sleep_finish = el('clock_sleep_finish').value;
+        cfg.clock_sleep_start = readSleepInput('clock_sleep_start', cfg.clock_12h);
+        cfg.clock_sleep_finish = readSleepInput('clock_sleep_finish', cfg.clock_12h);
         for (var i = 0; i < 3; i++) {
             cfg.alarms[i].time = el('alarm' + i + 'Time').value;
             cfg.alarms[i].active = el('alarm' + i + 'Active').checked;
@@ -346,8 +396,8 @@
             return;
         }
         node.textContent = sleepActiveNow()
-            ? 'asleep until ' + cfg.clock_sleep_finish
-            : cfg.clock_sleep_start + ' – ' + cfg.clock_sleep_finish;
+            ? 'asleep until ' + fmtTime(cfg.clock_sleep_finish)
+            : fmtTime(cfg.clock_sleep_start) + ' – ' + fmtTime(cfg.clock_sleep_finish);
     }
 
     function renderNextAlarm() {
@@ -560,6 +610,15 @@
                 var i = parseInt(b.getAttribute('data-preview'), 10);
                 previewMelody(parseInt(el('alarm' + i + 'Melody').value, 10) || 0);
             });
+        });
+        el('clock_12h').addEventListener('change', function () {
+            var nowOn = el('clock_12h').checked;
+            // the editors on screen still hold the previous mode's values
+            cfg.clock_sleep_start = readSleepInput('clock_sleep_start', !nowOn);
+            cfg.clock_sleep_finish = readSleepInput('clock_sleep_finish', !nowOn);
+            cfg.clock_12h = nowOn;
+            fillSleepInput('clock_sleep_start');
+            fillSleepInput('clock_sleep_finish');
         });
         el('phoneOffset').addEventListener('click', function () {
             // With automatic DST the stored offset must be the winter
