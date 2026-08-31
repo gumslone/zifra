@@ -149,8 +149,10 @@ West — but factories in the Soviet Union kept producing their own **ИН (IN)
 series** in enormous numbers well into the 1980s.
 
 The tube in ZIFRA is one of those: the **IN-12B (ИН-12Б)**, a side-viewed nixie
-with 18 mm digits and a decimal point on the left, made by Reflector in Saratov
-and other Soviet plants. Unsocketed "new old stock" tubes still surface from old
+with 18 mm digits and a decimal point on the left, made mainly by Reflector in
+Saratov. Other IN-series tubes came from plants across the Soviet Union — the
+Gazotron works in Rivne, Ukraine was among the biggest, producing the IN-8,
+IN-14 and IN-16 that power many of today's nixie clocks. Unsocketed "new old stock" tubes still surface from old
 warehouses, which is what keeps nixie clocks alive today — nobody mass-produces
 nixies anymore, so every tube is decades old and finite. That scarcity is also why
 ZIFRA uses a **single tube** that spells the time digit by digit instead of four
