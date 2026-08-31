@@ -2,6 +2,25 @@
 #ifndef ZIFRA_NETWORK_H
 #define ZIFRA_NETWORK_H
 
+// Injected after WiFiManager's stock stylesheet, so these rules restyle
+// the captive portal in the zifra look (nixie amber on warm dark).
+const char PORTAL_STYLE[] PROGMEM =
+  "<style>"
+  "body{background:#14110c;color:#e8e0d0;font-family:system-ui,-apple-system,sans-serif}"
+  ".wrap{background:#1c1813;border:1px solid #3a332a;border-radius:8px;padding:20px;margin-top:24px}"
+  "h1{color:#f2be44;letter-spacing:1px;text-shadow:0 0 7px #f2be44,0 0 21px #f2be44,0 0 42px #f45404}"
+  "h3{color:#9a8f7c;font-weight:400}"
+  "a,a:hover,body.invert a{color:#f2be44}"
+  "button,input[type='button'],input[type='submit']{background-color:#f2be44;color:#14110c;font-weight:700;border-radius:6px}"
+  "button.D{background-color:#e05d44;color:#fff}"
+  "input,select,textarea{background:#211c15;color:#e8e0d0;border:1px solid #4a4036;border-radius:6px}"
+  "input:focus{outline:none;border-color:#f2be44}"
+  "input[type='file']{border:1px solid #4a4036}"
+  ".msg{background:#211c15;color:#e8e0d0;border:1px solid #3a332a;border-left-width:5px;border-radius:6px}"
+  ".q[role=img]{-webkit-filter:invert(70%) sepia(65%) saturate(4) hue-rotate(-12deg);filter:invert(70%) sepia(65%) saturate(4) hue-rotate(-12deg)}"
+  "dt{color:#f2be44}"
+  "</style>";
+
 // WiFi, captive-portal and mDNS management for the clock.
 class Network {
   public:
@@ -15,6 +34,15 @@ class Network {
       m_wifiManager.setSaveConfigCallback([this]() { m_conf.saveConfigCallback(); });
       m_wifiManager.setMinimumSignalQuality();
       m_wifiManager.setConfigPortalTimeout(180);
+      // The softAP and the join attempt share one radio: without a clean
+      // disconnect first, the initial join from the portal often dies as a
+      // spurious "Authentication Failure". Disconnect cleanly and retry.
+      m_wifiManager.setCleanConnect(true);
+      m_wifiManager.setConnectRetries(3);
+      m_wifiManager.setConnectTimeout(20);
+      // Captive portal in the zifra look
+      m_wifiManager.setTitle("ZIFRA");
+      m_wifiManager.setCustomHeadElement(PORTAL_STYLE);
 
       WiFi.hostname(identifier);
       const IPAddress apIP(192, 168, 4, 1);
