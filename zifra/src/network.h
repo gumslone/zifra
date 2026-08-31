@@ -55,6 +55,11 @@ class Network {
       }
 
       D_println(F("Network: WiFi connected"));
+      // WiFiManager can leave the setup AP broadcasting in AP+STA mode
+      // after a successful join - shut it down, the clock is a plain
+      // station from here on.
+      WiFi.softAPdisconnect(true);
+      WiFi.mode(WIFI_STA);
       m_conf.saveConfig();
       D_println("Network: IP " + WiFi.localIP().toString());
       D_println("Network: gateway " + WiFi.gatewayIP().toString());
