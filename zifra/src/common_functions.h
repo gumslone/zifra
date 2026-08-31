@@ -1,36 +1,31 @@
 #pragma once
+#ifndef ZIFRA_COMMON_FUNCTIONS_H
+#define ZIFRA_COMMON_FUNCTIONS_H
 
-/// <summary>
-/// Adds a leading 0 to a number if it is smaller than 10
-/// </summary>
-String IntFormat(int _int) {
-  if (_int < 10) {
-    return "0" + String(_int);
+// Small shared helpers. No hardware access — host-testable
+// (tests/test_common_functions.cpp).
+
+// 7 -> "07", 12 -> "12"
+inline String IntFormat(int value) {
+  if (value < 10) {
+    return "0" + String(value);
   }
-
-  return String(_int);
+  return String(value);
 }
 
-/// <summary>
-/// Convert RSSI to percentage quality
-/// </summary>
-int GetRSSIasQuality(int rssi) {
-  int quality = 0;
-
+// RSSI (dBm) -> link quality 0-100%
+inline int GetRSSIasQuality(int rssi) {
   if (rssi <= -100) {
-    quality = 0;
-  } else if (rssi >= -50) {
-    quality = 100;
-  } else {
-    quality = 2 * (rssi + 100);
+    return 0;
   }
-  return quality;
+  if (rssi >= -50) {
+    return 100;
+  }
+  return 2 * (rssi + 100);
 }
 
-/// <summary>
-/// Joins an int array into a separated string, e.g. {1,0,1} -> "1,0,1"
-/// </summary>
-String join(int *arr, const String &separator, int len) {
+// {1,0,1} -> "1,0,1"
+inline String join(const int *arr, const String &separator, int len) {
   String out = "";
   for (int i = 0; i < len; i++) {
     if (i > 0) {
@@ -40,3 +35,5 @@ String join(int *arr, const String &separator, int len) {
   }
   return out;
 }
+
+#endif

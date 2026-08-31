@@ -3,8 +3,8 @@
 #include <ArduinoJson.h>
 #include <FS.h>
 #include "zifra_types.h"
-#ifndef _Zifra_Config_
-#define _Zifra_Config_
+#ifndef ZIFRA_CONFIGURATION_H
+#define ZIFRA_CONFIGURATION_H
 
 class ZifraConfig {
   public:

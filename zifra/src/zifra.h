@@ -6,8 +6,8 @@
 #include "alarm.h"
 #include "zifra_clock_timer.h"
 #include "pf595.h"
-#ifndef _Zifra_
-#define _Zifra_
+#ifndef ZIFRA_H
+#define ZIFRA_H
 struct VolatileParameters {
   unsigned long sleepShakeTime{0};
 };

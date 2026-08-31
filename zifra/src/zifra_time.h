@@ -2,8 +2,8 @@
 #include <ds3231.h>
 #include <NTPClient.h>
 #include "dst_logic.h"
-#ifndef _Zifra_Time_
-#define _Zifra_Time_
+#ifndef ZIFRA_TIME_H
+#define ZIFRA_TIME_H
 class WebTime: public NTPClient {
   public:
     using NTPClient::NTPClient;

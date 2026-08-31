@@ -1,8 +1,8 @@
 #pragma once
 #include "alarm_logic.h"
 #include "melodies.h"
-#ifndef _Zifra_Alarm_
-#define _Zifra_Alarm_
+#ifndef ZIFRA_ALARM_H
+#define ZIFRA_ALARM_H
 
 class ZifraAlarm {
   public:

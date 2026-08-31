@@ -1,41 +1,29 @@
 #pragma once
+#ifndef ZIFRA_I2CSCANNER_H
+#define ZIFRA_I2CSCANNER_H
 
+// One-shot I2C bus scan at boot; the found addresses decide whether the
+// optional DS3231 RTC (0x68) is present.
 namespace i2cScanner {
 
 String addresses;
 
-// scan i2c devices
 void scan() {
-  D_println("Scanning...");
-  int nDevices = 0;
+  D_println(F("i2c: scanning..."));
   for (uint8_t address = 1; address < 127; address++) {
-    // The i2c_scanner uses the return value of
-    // the Write.endTransmisstion to see if
-    // a device did acknowledge to the address.
+    // a device acknowledges its address with a clean endTransmission
     Wire.beginTransmission(address);
     const uint8_t error = Wire.endTransmission();
     if (error == 0) {
-      D_println("I2C device found at address 0x");
       addresses += "0x";
       if (address < 16) {
-        D_print("0");
         addresses += "0";
       }
-
-      D_println(address, HEX);
       addresses += String(address, HEX) + ",";
-      nDevices++;
-    } else if (error == 4) {
-      D_print("Unknown error at address 0x");
-      if (address < 16)
-        D_print("0");
-      D_println(address, HEX);
+      D_println("i2c: device at 0x" + String(address, HEX));
     }
   }
-  if (nDevices == 0)
-    D_println("No I2C devices found\n");
-  else
-    D_println("I2C scan is finished\n");
+  D_println("i2c: found " + (addresses.length() ? addresses : String("none")));
 }
 
 bool addressExists(const char *addr) {
@@ -43,3 +31,5 @@ bool addressExists(const char *addr) {
 }
 
 } // namespace i2cScanner
+
+#endif
