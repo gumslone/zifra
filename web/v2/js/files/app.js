@@ -332,6 +332,7 @@
         });
         renderSleepRow();
         renderNextAlarm();
+        tickHero();
     }
 
     function readForm() {
@@ -549,6 +550,16 @@
         { digit: 3, dot: true, ms: 800 }, { off: true, ms: 1600 }
     ];
 
+    // Hours exactly as the firmware displays them (see CurrentTime::getHours)
+    function heroHours() {
+        var h = new Date().getHours();
+        if (cfg.clock_12h) {
+            if (h > 12) h -= 12;
+            else if (h === 0) h = 12;
+        }
+        return h;
+    }
+
     function tubeStep(pos) {
         var slot = SLOTS[pos];
         var tube = el('tube');
@@ -560,12 +571,18 @@
             setTimeout(function () { tubeStep(pos); }, 5000);
             return;
         }
+        var h = heroHours();
+        // with the leading zero off the firmware skips the first digit's slots
+        if (pos <= 1 && h < 10 && !cfg.clock_leading_hour_zero) {
+            tubeStep(2);
+            return;
+        }
         if (slot.off) {
             tube.classList.add('dark');
             el('tubeDot').classList.remove('lit');
         } else {
             var now = new Date();
-            var digits = [Math.floor(now.getHours() / 10), now.getHours() % 10,
+            var digits = [Math.floor(h / 10), h % 10,
                           Math.floor(now.getMinutes() / 10), now.getMinutes() % 10];
             tube.classList.remove('dark');
             el('tubeDigit').textContent = digits[slot.digit];
@@ -576,7 +593,9 @@
 
     function tickHero() {
         var now = new Date();
-        el('heroTime').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+        var h = heroHours();
+        var hh = (h < 10 && !cfg.clock_leading_hour_zero) ? String(h) : pad(h);
+        el('heroTime').textContent = hh + ':' + pad(now.getMinutes());
     }
 
     // ---- boot -------------------------------------------------------------
@@ -619,6 +638,11 @@
             cfg.clock_12h = nowOn;
             fillSleepInput('clock_sleep_start');
             fillSleepInput('clock_sleep_finish');
+            tickHero();
+        });
+        el('clock_leading_hour_zero').addEventListener('change', function () {
+            cfg.clock_leading_hour_zero = el('clock_leading_hour_zero').checked;
+            tickHero();
         });
         el('phoneOffset').addEventListener('click', function () {
             // With automatic DST the stored offset must be the winter
