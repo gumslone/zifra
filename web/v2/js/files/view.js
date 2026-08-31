@@ -140,7 +140,10 @@
         <div class="card">
           <div class="card-title">Firmware update</div>
           <div class="hint">Flash a new .bin over WiFi &mdash; no cables needed. The clock keeps its settings.</div>
-          <button class="btn" id="updateBtn" style="margin-top:10px;">${ICONS.upload}<span>Open the updater&hellip;</span></button>
+          <label class="file-pick" id="fwPick"><input type="file" id="fwFile" accept=".bin" hidden><span id="fwName">Choose firmware .bin&hellip;</span></label>
+          <button class="btn" id="fwFlash" disabled>${ICONS.upload}<span>Flash firmware</span></button>
+          <div class="progress" hidden id="fwBar"><div id="fwFill"></div></div>
+          <div class="hint" id="fwMsg" style="margin-top:8px;">Don't unplug the clock while flashing.</div>
         </div>`;
 
     Z.SCREENS = [

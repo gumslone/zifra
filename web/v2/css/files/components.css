@@ -327,3 +327,45 @@ select:focus {
 .overlay .box h3 { margin: 0; color: var(--glow); font-size: 18px; }
 .overlay .box p { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.5; }
 .overlay .count { color: var(--glow); font-weight: 700; }
+
+/* In-app firmware uploader (System page) */
+
+.file-pick {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 14px;
+    margin: 10px 0;
+    border: 1px dashed var(--input-border);
+    border-radius: 6px;
+    background: var(--input-bg);
+    color: var(--muted);
+    font-size: 14px;
+    cursor: pointer;
+    word-break: break-all;
+}
+
+.file-pick.picked { border-style: solid; border-color: var(--glow); color: var(--glow); }
+
+.btn:disabled { opacity: .45; cursor: default; box-shadow: none; }
+
+.progress {
+    height: 8px;
+    margin-top: 10px;
+    border-radius: 4px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    overflow: hidden;
+}
+
+.progress div {
+    height: 100%;
+    width: 0;
+    background: var(--glow);
+    box-shadow: 0 0 8px var(--glow);
+    transition: width .2s;
+}
+
+.hint.ok { color: var(--ok); }
+.hint.bad { color: var(--bad); }

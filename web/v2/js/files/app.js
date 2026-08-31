@@ -115,9 +115,54 @@
             }
             el('utcOffsetInSeconds').value = mins * 60;
         });
-        const openUpdater = () => { location.href = '/update'; };
-        el('updateBtn').addEventListener('click', openUpdater);
-        el('updateLink').addEventListener('click', openUpdater);
+        el('updateLink').addEventListener('click', () => Z.showScreen('system'));
+        wireUpdater();
+    };
+
+    // Flashes a firmware .bin straight from the System page: the app is
+    // served by the clock itself, so POST /update is same-origin. The
+    // standalone page at /update stays as a fallback.
+    const wireUpdater = () => {
+        const file = el('fwFile');
+        const flash = el('fwFlash');
+        const msg = el('fwMsg');
+        file.addEventListener('change', () => {
+            if (!file.files.length) return;
+            el('fwName').textContent = file.files[0].name;
+            el('fwPick').classList.add('picked');
+            flash.disabled = false;
+        });
+        flash.addEventListener('click', () => {
+            if (!file.files.length) return;
+            flash.disabled = true;
+            el('fwBar').hidden = false;
+            msg.className = 'hint';
+            msg.textContent = 'Flashing… don’t unplug the clock.';
+            const fd = new FormData();
+            fd.append('update', file.files[0]);
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/update');
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) el('fwFill').style.width = Math.round(e.loaded / e.total * 100) + '%';
+            };
+            xhr.onload = () => {
+                if (xhr.status === 200 && xhr.responseText.indexOf('Success') >= 0) {
+                    el('fwFill').style.width = '100%';
+                    msg.className = 'hint ok';
+                    msg.textContent = 'Update done — the clock is rebooting and this page reconnects by itself.';
+                } else {
+                    msg.className = 'hint bad';
+                    msg.textContent = 'Update failed — the clock kept its old firmware. Check the .bin and try again.';
+                    flash.disabled = false;
+                }
+            };
+            xhr.onerror = () => {
+                msg.className = 'hint bad';
+                msg.textContent = 'Connection lost — if the flash finished, the clock is rebooting.';
+                flash.disabled = false;
+            };
+            xhr.send(fd);
+        });
     };
 
     // ---- boot -------------------------------------------------------------
