@@ -15,6 +15,8 @@ window.ZIFRA = {};
 
     Z.DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     Z.DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    Z.DAY_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday',
+                  'Thursday', 'Friday', 'Saturday'];
 
     // Mirrors MELODIES in the firmware's melodies.h ([freq, ms]; freq 0 = rest)
     Z.MELODIES = [

@@ -7,14 +7,14 @@
 (function (Z) {
     'use strict';
 
-    const { el, all, ICONS, DAY_LETTERS, DAY_NAMES } = Z;
+    const { el, all, ICONS, DAY_LETTERS, DAY_NAMES, DAY_FULL } = Z;
     const cfg = Z.cfg;
 
     // ---- templates --------------------------------------------------------
 
     const alarmHtml = (i) => {
         const chips = DAY_LETTERS.map((letter, d) =>
-            `<button class="chip" data-alarm="${i}" data-day="${d}" aria-label="${DAY_NAMES[d]}">${letter}</button>`
+            `<button class="chip" data-alarm="${i}" data-day="${d}" title="${DAY_FULL[d]}" aria-label="${DAY_FULL[d]}">${letter}</button>`
         ).join('');
         const options = Z.MELODIES.map((m, idx) =>
             `<option value="${idx}">${m.name}</option>`
