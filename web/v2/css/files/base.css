@@ -1,0 +1,188 @@
+/*
+ * ZIFRA web UI v2 — base layer: design tokens, reset and the app frame
+ * (top bar / bottom tabs on mobile, side rail on desktop).
+ * Bundled by css/style.php: font.css -> base.css -> components.css -> nixie.css
+ */
+
+:root {
+    --glow: #f2be44;
+    --glow-deep: #f45404;
+    --bg: #14110c;
+    --bar: #0a0805;
+    --panel: #1c1813;
+    --border: #3a332a;
+    --divider: #2a241c;
+    --text: #e8e0d0;
+    --muted: #9a8f7c;
+    --input-bg: #211c15;
+    --input-border: #4a4036;
+    --knob-off: #6b6152;
+    --console: #100d09;
+    --ok: #34c07c;
+    --bad: #e05d44;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+}
+
+a { color: var(--glow); }
+a:hover { color: var(--glow-deep); }
+
+button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+/* App frame: top bar, screen area, bottom tabs (rail on desktop) */
+
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.appbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    padding: 0 16px;
+    background: var(--bar);
+    border-bottom: 1px solid var(--border);
+}
+
+.brand {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--glow);
+    text-shadow: 0 0 7px var(--glow), 0 0 21px var(--glow), 0 0 42px var(--glow-deep);
+}
+
+.conn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.conn .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--bad);
+}
+
+.conn.online .dot { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+
+main {
+    flex-grow: 1;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 16px 16px 96px;
+}
+
+.screen { display: none; flex-direction: column; gap: 16px; }
+.screen.active { display: flex; }
+
+/* Bottom tab bar (mobile) / side rail (desktop) */
+
+.tabbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    height: 64px;
+    background: var(--bar);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.tab svg { width: 22px; height: 22px; }
+.tab.active { color: var(--glow); font-weight: 600; }
+
+/* Desktop: side rail instead of bottom tabs, roomier content */
+
+@media (min-width: 900px) {
+    #app { flex-direction: row; }
+
+    .appbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 220px;
+        height: auto;
+        bottom: 0;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 24px;
+        padding: 24px 12px;
+        border-bottom: none;
+        border-right: 1px solid var(--border);
+    }
+
+    .brand { padding: 0 12px; font-size: 24px; }
+    .conn { order: 3; margin-top: auto; padding: 0 12px; }
+
+    .tabbar {
+        position: fixed;
+        top: 96px;
+        left: 0;
+        right: auto;
+        bottom: auto;
+        width: 220px;
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        background: none;
+        border: none;
+        padding: 0 12px;
+        gap: 4px;
+    }
+
+    .tab {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 12px;
+        height: 44px;
+        padding: 0 12px;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .tab svg { width: 18px; height: 18px; }
+    .tab.active { background: rgba(242, 190, 68, .08); }
+
+    main { margin-left: 220px; padding: 32px 32px 48px; max-width: 940px; }
+}

@@ -11,6 +11,10 @@ if (isset($_SERVER["HTTP_ACCEPT_ENCODING"]) && strstr($_SERVER["HTTP_ACCEPT_ENCO
 }
 
 $files = array(
+	'./files/core.js',
+	'./files/state.js',
+	'./files/view.js',
+	'./files/audio.js',
 	'./files/app.js',
 );
 

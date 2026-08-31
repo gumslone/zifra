@@ -12,7 +12,9 @@ if (isset($_SERVER["HTTP_ACCEPT_ENCODING"]) && strstr($_SERVER["HTTP_ACCEPT_ENCO
 
 $files = array(
 	'./files/font.css',
-	'./files/app.css',
+	'./files/base.css',
+	'./files/components.css',
+	'./files/nixie.css',
 );
 
 foreach ($files as $file) {
