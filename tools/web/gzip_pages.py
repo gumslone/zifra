@@ -37,6 +37,88 @@ def php_bundle(bundler):
     return b"\n".join(read(os.path.join(base, "files", f)) for f in files) + b"\n"
 
 
+# ---- minifiers ---------------------------------------------------------
+# Comments and indentation only serve the sources in web/v2; the embedded
+# copy drops them before gzip. Deliberately conservative: line breaks stay
+# (JS relies on them for semicolon insertion) and strings are copied
+# verbatim, so a "//" inside a URL or an HTML template survives.
+
+_REGEX_BEFORE = set("(,=:[!&|?{};\n")
+
+
+def strip_js(src):
+    out = []
+    i = 0
+    n = len(src)
+    last = "\n"  # last significant character, decides regex vs division
+    while i < n:
+        c = src[i]
+        if c in "'\"`":
+            j = i + 1
+            while j < n:
+                if src[j] == "\\":
+                    j += 2
+                    continue
+                if src[j] == c:
+                    break
+                j += 1
+            out.append(src[i:j + 1])
+            last = c
+            i = j + 1
+            continue
+        if c == "/" and src.startswith("//", i):
+            j = src.find("\n", i)
+            i = n if j < 0 else j
+            continue
+        if c == "/" and src.startswith("/*", i):
+            j = src.find("*/", i + 2)
+            i = n if j < 0 else j + 2
+            continue
+        if c == "/" and last in _REGEX_BEFORE:
+            j = i + 1
+            in_class = False
+            while j < n:
+                if src[j] == "\\":
+                    j += 2
+                    continue
+                if src[j] == "[":
+                    in_class = True
+                elif src[j] == "]":
+                    in_class = False
+                elif src[j] == "/" and not in_class:
+                    break
+                j += 1
+            out.append(src[i:j + 1])
+            last = "/"
+            i = j + 1
+            continue
+        out.append(c)
+        if not c.isspace():
+            last = c
+        i += 1
+    lines = [line.rstrip() for line in "".join(out).split("\n")]
+    lines = [line.lstrip() for line in lines]
+    return "\n".join(line for line in lines if line)
+
+
+def strip_css(src):
+    src = re.sub(r"/\*.*?\*/", "", src, flags=re.S)
+    lines = [line.strip() for line in src.split("\n")]
+    return "\n".join(line for line in lines if line)
+
+
+def strip_html(src):
+    src = re.sub(r"<!--.*?-->", "", src, flags=re.S)
+    lines = [line.strip() for line in src.split("\n")]
+    return "\n".join(line for line in lines if line)
+
+
+def minify(kind, raw):
+    text = raw.decode("utf-8")
+    text = {"js": strip_js, "css": strip_css, "html": strip_html}[kind](text)
+    return (text + "\n").encode("utf-8")
+
+
 def to_array(name, raw, origin):
     gz = gzip.compress(raw, compresslevel=9, mtime=0)
     lines = []
@@ -55,14 +137,18 @@ def main():
     index = read(os.path.join(ROOT, "zifra", "pages", "index.html"))
     index = index.replace(b"{{version}}", ver.encode())
     blobs = [
-        ("MAIN_PAGE", index, "zifra/pages/index.html (v" + ver + ")"),
-        ("UPDATE_PAGE", read(os.path.join(ROOT, "zifra", "pages", "update.html")),
+        ("MAIN_PAGE", minify("html", index), "zifra/pages/index.html (v" + ver + ")"),
+        ("UPDATE_PAGE", minify("html", read(os.path.join(ROOT, "zifra", "pages", "update.html"))),
          "zifra/pages/update.html"),
-        ("APP_JS", php_bundle(os.path.join(WEB, "js", "javascript.php")),
+        ("APP_JS", minify("js", php_bundle(os.path.join(WEB, "js", "javascript.php"))),
          "web/v2/js bundle"),
-        ("APP_CSS", php_bundle(os.path.join(WEB, "css", "style.php")),
+        ("APP_CSS", minify("css", php_bundle(os.path.join(WEB, "css", "style.php"))),
          "web/v2/css bundle"),
     ]
+    if os.environ.get("ZIFRA_DUMP_BUNDLES"):  # for checking the minified output
+        for name, raw, _ in blobs:
+            with open(os.path.join(os.environ["ZIFRA_DUMP_BUNDLES"], name.lower() + ".out"), "wb") as f:
+                f.write(raw)
     parts = [
         "#pragma once\n"
         "#ifndef ZIFRA_WEBINTERFACE_H\n"
