@@ -92,20 +92,33 @@ window.ZIFRA = {};
             return h24;
         },
 
-        // mirrors the firmware's sleep decision (sleep_logic.h) on a Date
+        // mirrors the firmware's sleep decision (sleep_logic.h); `now` is {h, m}
         sleepActive(cfg, now) {
             if (!cfg.clock_sleep || !cfg.clock_sleep_start || !cfg.clock_sleep_finish) return false;
             const hhmm = (s) => {
                 const p = s.split(':');
                 return parseInt(p[0], 10) * 100 + parseInt(p[1], 10);
             };
-            const t = now.getHours() * 100 + now.getMinutes();
+            const t = now.h * 100 + now.m;
             const start = hhmm(cfg.clock_sleep_start);
             const finish = hhmm(cfg.clock_sleep_finish);
             if (Math.floor(start / 100) > Math.floor(finish / 100)) {
                 return t >= start || t <= finish; // window wraps past midnight
             }
             return t >= start && t <= finish;
+        },
+
+        // The clock's own time when the firmware reports it (info.clockTime,
+        // "HH:MM" 24h), the browser's otherwise - so the dashboard mirrors
+        // what the tube really shows, time-zone mistakes included.
+        clockNow() {
+            const t = Z.info && Z.info.clockTime;
+            if (t) {
+                const p = String(t).split(':');
+                return { h: parseInt(p[0], 10), m: parseInt(p[1], 10) };
+            }
+            const d = new Date();
+            return { h: d.getHours(), m: d.getMinutes() };
         },
 
         // the soonest active alarm: { mins, time, day } or null

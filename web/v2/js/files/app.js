@@ -48,15 +48,21 @@
         });
     }, 4000);
 
-    const saveConfig = () => {
-        const payload = JSON.stringify(Z.configPayload());
-        Z.renderConfig();
+    // Sends a (partial) config to the clock; it saves, applies and
+    // broadcasts the result back to every open page.
+    const sendConfig = (payload) => {
         const overlay = el('overlay');
         overlay.classList.add('show');
         setTimeout(() => overlay.classList.remove('show'), 1800);
         if (!HOST) return;
         const ws = new WebSocket('ws://' + HOST + ':81/setConfig');
-        ws.onopen = () => { ws.send(payload); ws.close(); };
+        ws.onopen = () => { ws.send(JSON.stringify(payload)); ws.close(); };
+    };
+
+    const saveConfig = () => {
+        const payload = Z.configPayload();
+        Z.renderConfig();
+        sendConfig(payload);
     };
 
     // ---- event wiring -----------------------------------------------------
@@ -91,14 +97,11 @@
         });
         el('clock_12h').addEventListener('change', () => {
             const nowOn = el('clock_12h').checked;
-            // the editors on screen still hold the previous mode's values
-            cfg.clock_sleep_start = Z.readSleepInput('clock_sleep_start', !nowOn);
-            cfg.clock_sleep_finish = Z.readSleepInput('clock_sleep_finish', !nowOn);
             cfg.clock_12h = nowOn;
-            Z.fillSleepInput('clock_sleep_start');
-            Z.fillSleepInput('clock_sleep_finish');
+            Z.switchTimeInputs(!nowOn);
             Z.tickHero();
         });
+        el('otaClear').addEventListener('click', () => sendConfig({ otaPassword: '' }));
         el('clock_leading_hour_zero').addEventListener('change', () => {
             cfg.clock_leading_hour_zero = el('clock_leading_hour_zero').checked;
             Z.tickHero();

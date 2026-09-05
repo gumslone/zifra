@@ -22,7 +22,7 @@
         return `
         <div class="card alarm-card" id="alarmCard${i}">
           <div class="alarm-head">
-            <input type="time" class="alarm-time" id="alarm${i}Time">
+            ${timeInputHtml('alarm' + i + 'Time', 'alarm-time')}
             <label class="switch"><input type="checkbox" id="alarm${i}Active"><span class="knob"></span></label>
           </div>
           <div class="weekdays">${chips}</div>
@@ -37,9 +37,9 @@
     // The native time input always follows the browser locale, so the 12h
     // clock setting gets its own hour/minute/AM-PM editor; values are
     // converted back to 24h HH:MM before they reach the firmware.
-    const sleepTimeHtml = (id) => `
-        <input type="time" id="${id}">
-        <span class="time12" id="${id}_12" hidden>
+    const timeInputHtml = (id, cls = '') => `
+        <input type="time" id="${id}" class="${cls}">
+        <span class="time12 ${cls ? cls + '-12' : ''}" id="${id}_12" hidden>
           <input type="number" id="${id}_h" min="1" max="12" inputmode="numeric" placeholder="--">
           <span class="colon">:</span>
           <input type="number" id="${id}_m" min="0" max="59" inputmode="numeric" placeholder="--">
@@ -99,8 +99,8 @@
           <div class="row" style="min-height:0;"><span class="card-title" style="margin:0;">Night sleep</span>
             <label class="switch"><input type="checkbox" id="clock_sleep"><span class="knob"></span></label></div>
           <div class="two-cols">
-            <div class="field"><span class="field-label">Begin</span>${sleepTimeHtml('clock_sleep_start')}</div>
-            <div class="field"><span class="field-label">End</span>${sleepTimeHtml('clock_sleep_finish')}</div>
+            <div class="field"><span class="field-label">Begin</span>${timeInputHtml('clock_sleep_start')}</div>
+            <div class="field"><span class="field-label">End</span>${timeInputHtml('clock_sleep_finish')}</div>
           </div>
           <div class="hint">Tube off during the window (may span midnight) &mdash; saves IN-12B life. Top button wakes it for 3 minutes.</div>
         </div>
@@ -144,6 +144,16 @@
           <button class="btn" id="fwFlash" disabled>${ICONS.upload}<span>Flash firmware</span></button>
           <div class="progress" hidden id="fwBar"><div id="fwFill"></div></div>
           <div class="hint" id="fwMsg" style="margin-top:8px;">Don't unplug the clock while flashing.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Update password</div>
+          <div class="hint">Optional: without one, anyone on your WiFi can flash firmware. The user name is <strong>zifra</strong>.</div>
+          <div class="field"><span class="field-label">New password</span><input type="password" id="otaPassword" autocomplete="new-password" placeholder="Leave empty to keep the current one"></div>
+          <div class="hint" id="otaState"></div>
+          <div class="save-area" style="margin-top:8px;">
+            <button class="btn primary" data-save>Save changes</button>
+            <button class="btn" id="otaClear">Remove password</button>
+          </div>
         </div>`;
 
     Z.SCREENS = [
@@ -187,11 +197,11 @@
         el('connText').textContent = online ? 'Online' : 'Offline';
     };
 
-    // ---- sleep-time editor (24h input or 12h composite) -------------------
+    // ---- time editors (24h input or 12h composite) ------------------------
 
-    const fillSleepInput = (id) => {
-        el(id).value = cfg[id];
-        const v = Z.time.to12(cfg[id]);
+    const fillTimeInput = (id, value) => {
+        el(id).value = value;
+        const v = Z.time.to12(value);
         el(id + '_h').value = v ? v.h : '';
         el(id + '_m').value = v ? Z.time.pad(v.m) : '';
         el(id + '_ap').value = v && v.pm ? 'PM' : 'AM';
@@ -199,15 +209,31 @@
         el(id + '_12').hidden = !cfg.clock_12h;
     };
 
-    const readSleepInput = (id, is12) => {
+    const readTimeInput = (id, is12) => {
         if (!is12) return el(id).value;
         const h = parseInt(el(id + '_h').value, 10);
         const m = parseInt(el(id + '_m').value, 10);
         return Z.time.from12(h, m, el(id + '_ap').value === 'PM');
     };
 
-    Z.readSleepInput = readSleepInput;
-    Z.fillSleepInput = fillSleepInput;
+    // Every time editor on the page, so a 12h toggle can convert them all
+    const timeInputIds = () => ['clock_sleep_start', 'clock_sleep_finish']
+        .concat(cfg.alarms.map((a, i) => 'alarm' + i + 'Time'));
+
+    // Re-renders the editors after the 12h switch flipped: reads each one
+    // through the previous mode (that is what it still shows), then fills
+    // it for the new mode - unsaved edits survive the flip.
+    Z.switchTimeInputs = (wasIs12) => {
+        timeInputIds().forEach((id) => {
+            const value = readTimeInput(id, wasIs12);
+            if (id.indexOf('alarm') === 0) {
+                cfg.alarms[parseInt(id.charAt(5), 10)].time = value;
+            } else {
+                cfg[id] = value;
+            }
+            fillTimeInput(id, value);
+        });
+    };
 
     // ---- schema-driven form binding ---------------------------------------
 
@@ -228,15 +254,28 @@
             read: (f) => el(f.key).checked
         },
         time: {
-            fill: (f) => fillSleepInput(f.key),
-            read: (f) => readSleepInput(f.key, el('clock_12h').checked)
+            fill: (f) => fillTimeInput(f.key, cfg[f.key]),
+            read: (f) => readTimeInput(f.key, el('clock_12h').checked)
+        },
+        password: {
+            fill: (f) => { el(f.key).value = ''; }, // never echo it back
+            read: (f) => el(f.key).value
+        },
+        flag: {
+            fill: () => {
+                el('otaState').textContent = cfg.otaPasswordSet
+                    ? 'A password is set - flashing asks for it.'
+                    : 'No password set.';
+                el('otaClear').hidden = !cfg.otaPasswordSet;
+            },
+            read: (f) => cfg[f.key]
         }
     };
 
     Z.renderConfig = () => {
         Z.FIELDS.forEach((f) => BIND[f.kind].fill(f));
         cfg.alarms.forEach((alarm, i) => {
-            el('alarm' + i + 'Time').value = alarm.time;
+            fillTimeInput('alarm' + i + 'Time', alarm.time);
             el('alarm' + i + 'Active').checked = alarm.active;
             el('alarm' + i + 'Melody').value = alarm.melody;
             el('alarmCard' + i).classList.toggle('off', !alarm.active);
@@ -256,7 +295,7 @@
         cfg.clock_12h = el('clock_12h').checked;
         Z.FIELDS.forEach((f) => { cfg[f.key] = BIND[f.kind].read(f); });
         cfg.alarms.forEach((alarm, i) => {
-            alarm.time = el('alarm' + i + 'Time').value;
+            alarm.time = readTimeInput('alarm' + i + 'Time', cfg.clock_12h);
             alarm.active = el('alarm' + i + 'Active').checked;
             alarm.melody = parseInt(el('alarm' + i + 'Melody').value, 10) || 0;
         });
@@ -271,7 +310,7 @@
             return;
         }
         const fmt = (t) => Z.time.format(t, cfg.clock_12h);
-        node.textContent = Z.time.sleepActive(cfg, new Date())
+        node.textContent = Z.time.sleepActive(cfg, Z.time.clockNow())
             ? 'asleep until ' + fmt(cfg.clock_sleep_finish)
             : fmt(cfg.clock_sleep_start) + ' – ' + fmt(cfg.clock_sleep_finish);
     };
@@ -305,6 +344,9 @@
             el('homeWifi').textContent = info.wifiSSID +
                 (info.wifiQuality !== undefined ? ' · ' + info.wifiQuality + '%' : '');
         }
+        // the clock's own time may have ticked over
+        Z.tickHero();
+        Z.renderSleepRow();
     };
 
     Z.addLog = (entry) => {
@@ -325,29 +367,32 @@
         { digit: 3, dot: true, ms: 800 }, { off: true, ms: 1600 }
     ];
 
-    const heroHours = () => Z.time.displayHours(new Date().getHours(), cfg.clock_12h);
+    // hours and minutes as the tube shows them right now
+    const tubeNow = () => {
+        const now = Z.time.clockNow();
+        return { h: Z.time.displayHours(now.h, cfg.clock_12h), m: now.m };
+    };
 
     Z.tickHero = () => {
-        const now = new Date();
-        const h = heroHours();
-        const hh = (h < 10 && !cfg.clock_leading_hour_zero) ? String(h) : Z.time.pad(h);
-        el('heroTime').textContent = hh + ':' + Z.time.pad(now.getMinutes());
+        const now = tubeNow();
+        const hh = (now.h < 10 && !cfg.clock_leading_hour_zero) ? String(now.h) : Z.time.pad(now.h);
+        el('heroTime').textContent = hh + ':' + Z.time.pad(now.m);
     };
 
     Z.tubeStep = (pos) => {
         const slot = SLOTS[pos];
         const tube = el('tube');
         if (!tube) return;
-        if (Z.time.sleepActive(cfg, new Date())) {
+        if (Z.time.sleepActive(cfg, Z.time.clockNow())) {
             // the real tube is dark right now - show that
             tube.classList.add('dark');
             el('tubeDot').classList.remove('lit');
             setTimeout(() => Z.tubeStep(pos), 5000);
             return;
         }
-        const h = heroHours();
+        const now = tubeNow();
         // with the leading zero off the firmware skips the first digit's slots
-        if (pos <= 1 && h < 10 && !cfg.clock_leading_hour_zero) {
+        if (pos <= 1 && now.h < 10 && !cfg.clock_leading_hour_zero) {
             Z.tubeStep(2);
             return;
         }
@@ -355,9 +400,8 @@
             tube.classList.add('dark');
             el('tubeDot').classList.remove('lit');
         } else {
-            const now = new Date();
-            const digits = [Math.floor(h / 10), h % 10,
-                            Math.floor(now.getMinutes() / 10), now.getMinutes() % 10];
+            const digits = [Math.floor(now.h / 10), now.h % 10,
+                            Math.floor(now.m / 10), now.m % 10];
             tube.classList.remove('dark');
             el('tubeDigit').textContent = digits[slot.digit];
             el('tubeDot').classList.toggle('lit', slot.dot);

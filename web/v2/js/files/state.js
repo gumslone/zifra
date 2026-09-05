@@ -9,7 +9,9 @@
 
     Z.ALARM_COUNT = 3;
 
-    // kind: string | int | bool | time (time = the sleep 12h/24h editor)
+    // kind: string | int | bool | time (the 12h/24h time editor)
+    //       password (write-only: sent only when typed)
+    //       flag (read-only: reported by the clock, never sent back)
     Z.FIELDS = [
         { key: 'ntpServer', kind: 'string', def: 'pool.ntp.org' },
         { key: 'utcOffsetInSeconds', kind: 'int', def: 0 },
@@ -19,14 +21,18 @@
         { key: 'clock_leading_hour_zero', kind: 'bool', def: true },
         { key: 'clock_sleep', kind: 'bool', def: false },
         { key: 'clock_sleep_start', kind: 'time', def: '' },
-        { key: 'clock_sleep_finish', kind: 'time', def: '' }
+        { key: 'clock_sleep_finish', kind: 'time', def: '' },
+        { key: 'otaPassword', kind: 'password', def: '' },
+        { key: 'otaPasswordSet', kind: 'flag', def: false }
     ];
 
     const PARSE = {
         string: (v) => String(v),
         int: (v) => parseInt(v, 10) || 0,
         bool: (v) => !!v,
-        time: (v) => String(v)
+        time: (v) => String(v),
+        password: (v) => String(v),
+        flag: (v) => !!v
     };
 
     const newAlarm = () => ({ time: '', active: false, melody: 0, weekdays: [0, 0, 0, 0, 0, 0, 0] });
@@ -67,7 +73,11 @@
     Z.configPayload = () => {
         Z.emit('readForm'); // let the view pull the current form values first
         const out = {};
-        Z.FIELDS.forEach((f) => { out[f.key] = cfg[f.key]; });
+        Z.FIELDS.forEach((f) => {
+            if (f.kind === 'flag') return;
+            if (f.kind === 'password' && !cfg[f.key]) return; // empty = keep
+            out[f.key] = cfg[f.key];
+        });
         cfg.alarms.forEach((alarm, i) => {
             const p = 'alarm' + (i + 1);
             out[p + 'Time'] = alarm.time;

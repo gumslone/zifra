@@ -69,7 +69,7 @@ a.link-row { text-decoration: none; }
 
 /* Inputs */
 
-input[type="text"], input[type="number"], input[type="time"] {
+input[type="text"], input[type="number"], input[type="time"], input[type="password"] {
     font: inherit;
     color: var(--text);
     background: var(--input-bg);
@@ -369,3 +369,23 @@ select:focus {
 
 .hint.ok { color: var(--ok); }
 .hint.bad { color: var(--bad); }
+
+/* 12h editor inside an alarm head: as big and bare as the native alarm time */
+
+.alarm-head .time12 { flex: 1; margin-right: 12px; }
+
+.alarm-head .time12 input {
+    font-size: 34px;
+    width: 92px;
+    background: none;
+    border: none;
+    padding: 0;
+    min-height: 0;
+    text-shadow: 0 0 10px rgba(242, 190, 68, .5);
+}
+
+.alarm-head .time12 .colon { font-size: 34px; text-shadow: 0 0 10px rgba(242, 190, 68, .5); }
+.alarm-head .time12 select { flex: 0 0 auto; min-width: 72px; }
+
+.alarm-card.off .time12 input,
+.alarm-card.off .time12 .colon { color: var(--knob-off); text-shadow: none; }
