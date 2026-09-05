@@ -17,6 +17,10 @@ LIBRARIES_DIR="$REPO_DIR/libraries" # vendored copies of all used libraries
 
 BOARDS="esp8285 esp8266_generic"
 
+# 117 flash sectors: half of the 1MB layout's sketch area (0xEB000 bytes),
+# rounded down to a sector - the largest image that can still OTA itself.
+OTA_MAX_BYTES=479232
+
 fqbn_for_board() {
   case "$1" in
     esp8285)         echo "esp8266:esp8266:esp8285" ;;
@@ -40,6 +44,17 @@ build() {
     --output-dir "$out_dir" \
     "$SKETCH_DIR"
   echo "==> $board $mode binary: $out_dir/zifra.ino.bin"
+
+  # On the 1MB flash layout an OTA image has to fit above the running
+  # sketch, so a firmware bigger than half the sketch area could never be
+  # updated over WiFi again. Refuse to build such a release.
+  local size
+  size=$(wc -c < "$out_dir/zifra.ino.bin" | tr -d ' ')
+  echo "==> $board $mode size: $size bytes (OTA ceiling $OTA_MAX_BYTES)"
+  if [ "$mode" = "release" ] && [ "$size" -gt "$OTA_MAX_BYTES" ]; then
+    echo "ERROR: $board release binary exceeds the OTA ceiling by $((size - OTA_MAX_BYTES)) bytes" >&2
+    exit 1
+  fi
 
   # The ESP8285 release binary is shipped in the repo under firmware/.
   if [ "$board" = "esp8285" ] && [ "$mode" = "release" ]; then

@@ -104,7 +104,11 @@ def strip_js(src):
 def strip_css(src):
     src = re.sub(r"/\*.*?\*/", "", src, flags=re.S)
     lines = [line.strip() for line in src.split("\n")]
-    return "\n".join(line for line in lines if line)
+    src = "\n".join(line for line in lines if line)
+    # spaces around punctuation carry no meaning in CSS (the base64 font
+    # has none to begin with, so the data URI is untouched)
+    src = re.sub(r"\s*([{};:,>])\s*", r"\1", src)
+    return src.replace(";}", "}")
 
 
 def strip_html(src):

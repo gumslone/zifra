@@ -121,19 +121,21 @@ window.ZIFRA = {};
             return { h: d.getHours(), m: d.getMinutes() };
         },
 
-        // the soonest active alarm: { mins, time, day } or null
+        // the soonest active alarm: { mins, time, day } or null. Looks a
+        // full week ahead (7 = same weekday next week, for an alarm that
+        // already rang today).
         nextAlarm(alarms, now) {
+            const nowMins = now.getHours() * 60 + now.getMinutes();
             let best = null;
             alarms.forEach((a) => {
                 if (!a.active || !a.time) return;
                 const hm = a.time.split(':');
-                for (let off = 0; off < 7; off++) {
+                const alarmMins = parseInt(hm[0], 10) * 60 + parseInt(hm[1], 10);
+                for (let off = 0; off <= 7; off++) {
                     const day = (now.getDay() + off) % 7;
                     if (a.weekdays[day] !== 1) continue;
-                    const mins = off * 1440 +
-                        parseInt(hm[0], 10) * 60 + parseInt(hm[1], 10) -
-                        (off === 0 ? now.getHours() * 60 + now.getMinutes() : 0);
-                    if (off === 0 && mins <= 0) continue;
+                    const mins = off * 1440 + alarmMins - nowMins;
+                    if (mins <= 0) continue;
                     if (best === null || mins < best.mins) best = { mins, time: a.time, day };
                 }
             });

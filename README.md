@@ -119,9 +119,13 @@ be tested on the host:
 ```sh
 ./build.sh all     # arduino-cli builds: esp8285 + generic, release + debug
 pio run            # or build with PlatformIO
-./tests/run.sh     # native host tests, no board needed
+./tests/run.sh     # native host tests (+ the web app's, if node is installed)
 ./tests/tidy.sh    # clang-tidy static analysis
 ```
+
+Mind the flash budget: on the 1 MB layout an OTA image has to fit above the
+running sketch, so a release binary bigger than about 479 KB could never be
+updated over WiFi again — `build.sh` refuses to build one.
 
 The web interface lives in [`web/v2/`](web/v2) — a dependency-free ES6 single-page
 app in layered modules (`core` / `state` / `view` / `audio` / `app`). The clock

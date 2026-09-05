@@ -13,7 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - run: ./tests/run.sh
+
+  # The firmware embeds the web app as generated PROGMEM: fail when
+  # Webinterface.h was not regenerated after a web/v2 or pages/ change.
+  embedded-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/web/gzip_pages.py
+      - run: git diff --exit-code -- zifra/src/Webinterface.h
 
   clang-tidy:
     runs-on: ubuntu-latest

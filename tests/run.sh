@@ -20,6 +20,14 @@ for src in "$DIR"/test_*.cpp; do
   "$bin" || status=1
 done
 
+# The web app's pure logic (time math, config schema) under Node's test runner
+if command -v node >/dev/null 2>&1; then
+  echo "==> tests/web (node --test)"
+  node --test "$DIR"/web/*.test.mjs || status=1
+else
+  echo "==> tests/web skipped: node not installed"
+fi
+
 if [ "$status" -eq 0 ]; then
   echo "==> All test suites passed"
 else
