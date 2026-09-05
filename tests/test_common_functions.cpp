@@ -27,5 +27,13 @@ int main() {
   int pair[2] = {1, 2};
   CHECK_EQ_STR(join(pair, " - ", 2).c_str(), "1 - 2");
 
+  CASE("jsonEscape escapes quotes, backslashes and control characters");
+  CHECK_EQ_STR(jsonEscape("plain text").c_str(), "plain text");
+  CHECK_EQ_STR(jsonEscape("say \"hi\"").c_str(), "say \\\"hi\\\"");
+  CHECK_EQ_STR(jsonEscape("a\\b").c_str(), "a\\\\b");
+  CHECK_EQ_STR(jsonEscape("line\nbreak\ttab\r").c_str(), "line\\nbreak\\ttab\\r");
+  CHECK_EQ_STR(jsonEscape(String("bell") + (char)7).c_str(), "bell ");
+  CHECK_EQ_STR(jsonEscape("").c_str(), "");
+
   return SUMMARY();
 }

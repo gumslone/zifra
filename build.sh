@@ -36,7 +36,7 @@ build() {
   arduino-cli compile \
     --fqbn "$(fqbn_for_board "$board")" \
     --libraries "$LIBRARIES_DIR" \
-    --build-property "compiler.cpp.extra_flags=-DDEBUG=$debug_value" \
+    --build-property "compiler.cpp.extra_flags=-DDEBUG=$debug_value -DWM_NODEBUG" \
     --output-dir "$out_dir" \
     "$SKETCH_DIR"
   echo "==> $board $mode binary: $out_dir/zifra.ino.bin"
@@ -54,6 +54,10 @@ build_mode() {
     build "$board" "$mode" "$debug_value"
   done
 }
+
+# The clock serves the web app itself: refresh the embedded, gzipped copy
+# so a build never ships a stale UI.
+python3 "$REPO_DIR/tools/web/gzip_pages.py"
 
 case "${1:-release}" in
   debug)   build_mode debug 1 ;;

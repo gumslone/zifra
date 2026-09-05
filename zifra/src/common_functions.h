@@ -24,6 +24,27 @@ inline int GetRSSIasQuality(int rssi) {
   return 2 * (rssi + 100);
 }
 
+// Escapes text for use inside a JSON string literal: quotes, backslashes
+// and control characters can't appear raw there.
+inline String jsonEscape(const String &in) {
+  String out;
+  out.reserve(in.length() + 8);
+  const char *s = in.c_str();
+  for (unsigned int i = 0; i < in.length(); i++) {
+    const char c = s[i];
+    switch (c) {
+      case '"': out += "\\\""; break;
+      case '\\': out += "\\\\"; break;
+      case '\n': out += "\\n"; break;
+      case '\r': out += "\\r"; break;
+      case '\t': out += "\\t"; break;
+      default:
+        out += ((unsigned char)c < 0x20) ? ' ' : c;
+    }
+  }
+  return out;
+}
+
 // {1,0,1} -> "1,0,1"
 inline String join(const int *arr, const String &separator, int len) {
   String out = "";

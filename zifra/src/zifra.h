@@ -29,7 +29,6 @@ public:
       time.applySettings();
       time.setRTC();
     });
-    time.setTimeOffset();
   }
   bool sleep() {
     // getHoursIso, not getHours: the window is configured on the 24h clock,

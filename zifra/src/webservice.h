@@ -3,7 +3,8 @@
 #define ZIFRA_WEBSERVICE_H
 
 // The HTTP server, the OTA updater and the websocket API in one place.
-// Serves the redirect page, answers /update, and speaks the UI protocol:
+// Serves the embedded web app (/, /app.js, /app.css), the /update fallback
+// page, and speaks the UI protocol:
 //   /main      -> live info + log stream
 //   /settime, /settings, /setalarm, /setsystem -> config on connect
 //   /setConfig -> receives config JSON, saves and applies it
@@ -18,11 +19,23 @@ class WebService {
       // Registered before the updater so this styled page wins GET /update;
       // the updater's POST /update handler still does the flashing.
       m_server.on(F("/update"), HTTP_GET, [this]() {
-        sendPage(UPDATE_PAGE_GZ, UPDATE_PAGE_GZ_LEN);
+        if (!authorized()) {
+          return;
+        }
+        sendGz(UPDATE_PAGE_GZ, UPDATE_PAGE_GZ_LEN, "text/html", false);
       });
       m_updater.setup(&m_server);
+      applyOtaCredentials();
+
       m_server.on(F("/"), HTTP_GET, [this]() {
-        sendPage(MAIN_PAGE_GZ, MAIN_PAGE_GZ_LEN);
+        sendGz(MAIN_PAGE_GZ, MAIN_PAGE_GZ_LEN, "text/html", false);
+      });
+      // Versioned URLs (?v=<firmware version>), so these can cache for good
+      m_server.on(F("/app.js"), HTTP_GET, [this]() {
+        sendGz(APP_JS_GZ, APP_JS_GZ_LEN, "application/javascript", true);
+      });
+      m_server.on(F("/app.css"), HTTP_GET, [this]() {
+        sendGz(APP_CSS_GZ, APP_CSS_GZ_LEN, "text/css", true);
       });
       m_server.onNotFound([this]() { handleNotFound(); });
       m_server.begin();
@@ -55,8 +68,8 @@ class WebService {
       D_println("[" + timeStamp + "] " + function + ": " + message);
 
       sendToClients("{\"log\":{\"timeStamp\":\"" + timeStamp +
-                    "\",\"function\":\"" + function +
-                    "\",\"message\":\"" + message + "\"}}",
+                    "\",\"function\":\"" + jsonEscape(function) +
+                    "\",\"message\":\"" + jsonEscape(message) + "\"}}",
                     {"/main"});
     }
 
@@ -79,6 +92,8 @@ class WebService {
     }
 
   private:
+    static constexpr const char *OTA_USER = "zifra";
+
     String getInfo() {
       DynamicJsonDocument root(1024);
 
@@ -93,6 +108,9 @@ class WebService {
       root["chipID"] = ESP.getChipId();
       root["cpuFreqMHz"] = ESP.getCpuFreqMHz();
       root["clock_sleep"] = m_zifra.conf.clock.sleep;
+      // what the tube shows right now (24h), so the UI can mirror it
+      root["clockTime"] = IntFormat(m_zifra.time.getHoursIso()) + ":" +
+                          IntFormat(m_zifra.time.getMinutes());
 
       static const char *const weekdayNames[7] = {
         "Sunday", "Monday", "Tuesday", "Wednesday",
@@ -153,8 +171,14 @@ class WebService {
             if (((char *)payload)[0] != '{') {
               break; // keep-alives and other chatter
             }
-            DynamicJsonDocument json(512);
-            deserializeJson(json, payload);
+            // Sized for the full config (~30 keys); strings stay in the
+            // payload buffer, so the pool only holds the slots.
+            DynamicJsonDocument json(1024);
+            const auto error = deserializeJson(json, payload);
+            if (error) {
+              log(F("WebSocketEvent"), String("Bad JSON: ") + error.c_str());
+              break;
+            }
 
             log(F("WebSocketEvent"),
                 "Incomming Json length: " + String(measureJson(json)));
@@ -162,6 +186,7 @@ class WebService {
             if (m_clientPath[num] == "/setConfig") {
               JsonObject object = json.as<JsonObject>();
               m_zifra.conf.setConfig(object);
+              applyOtaCredentials();
               log(F("Config"), F("Saved and applied"));
               // push the fresh config to connected settings pages
               sendConfig();
@@ -173,12 +198,30 @@ class WebService {
       }
     }
 
-    // Sends one of the pre-gzipped pages from Webinterface.h. Every browser
+    // Optional password for flashing: the updater checks it on POST, this
+    // guards the fallback page. An empty password disables the check.
+    void applyOtaCredentials() {
+      m_updater.updateCredentials(OTA_USER, m_zifra.conf.otaPassword);
+    }
+
+    bool authorized() {
+      const String &password = m_zifra.conf.otaPassword;
+      if (password.length() == 0 || m_server.authenticate(OTA_USER, password.c_str())) {
+        return true;
+      }
+      m_server.requestAuthentication();
+      return false;
+    }
+
+    // Sends one of the pre-gzipped assets from Webinterface.h. Every browser
     // accepts gzip, so no Accept-Encoding check is needed.
-    void sendPage(const uint8_t *gz, size_t len) {
+    void sendGz(const uint8_t *gz, size_t len, const char *type, bool cacheable) {
       m_server.sendHeader("Connection", "close");
       m_server.sendHeader("Content-Encoding", "gzip");
-      m_server.send_P(200, "text/html", reinterpret_cast<const char *>(gz), len);
+      m_server.sendHeader("Cache-Control",
+                          cacheable ? "public, max-age=31536000, immutable"
+                                    : "no-cache");
+      m_server.send_P(200, type, reinterpret_cast<const char *>(gz), len);
     }
 
     void handleNotFound() {
@@ -186,7 +229,7 @@ class WebService {
         m_server.sendHeader("Access-Control-Allow-Origin", "*");
         m_server.send(204);
       }
-      m_server.sendHeader("Location", "/update", true);
+      m_server.sendHeader("Location", "/", true);
       m_server.send(302, "text/plain", "");
     }
 

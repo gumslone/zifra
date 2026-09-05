@@ -75,25 +75,27 @@ class Network {
       delay(300);
     }
 
-    void loop() { MDNS.update(); }
+    void loop() { m_mdns.update(); }
 
   private:
     void beginMDNS() {
       String escapedMac = WiFi.macAddress();
       escapedMac.replace(":", "");
       escapedMac.toLowerCase();
-      // "end" must be called before "begin" is called a 2nd time
-      // see https://github.com/esp8266/Arduino/issues/7213
-      MDNS.end();
-      MDNS.begin("zifra");
+      m_mdns.begin("zifra");
       D_println(F("Network: mDNS started"));
-      MDNS.addService("http", "tcp", 80);
-      MDNS.addService("zifra", "tcp", 80);
-      MDNS.addServiceTxt("zifra", "tcp", "mac", escapedMac.c_str());
+      m_mdns.addService("http", "tcp", 80);
+      m_mdns.addService("zifra", "tcp", 80);
+      m_mdns.addServiceTxt(const_cast<char *>("zifra"), const_cast<char *>("tcp"),
+                           const_cast<char *>("mac"),
+                           const_cast<char *>(escapedMac.c_str()));
     }
 
     WiFiManager &m_wifiManager;
     ZifraConfig &m_conf;
+    // The core's legacy responder: it answers zifra.local just as well as
+    // the default LEAmDNS and is a good deal smaller in flash.
+    Legacy_MDNSResponder::MDNSResponder m_mdns;
 };
 
 #endif

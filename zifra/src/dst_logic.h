@@ -42,6 +42,23 @@ inline bool euSummerTime(const struct tm &utc) {
   return false;
 }
 
+// Seconds since 1970-01-01 00:00 UTC for a civil date and time given in
+// UTC (days-from-civil algorithm, valid for 1970-2099). The RTC stores
+// UTC as calendar fields; this turns them back into an epoch without
+// depending on the C library's time zone state.
+inline time_t utcEpochFrom(int year, int month, int day,
+                           int hour, int minute, int second) {
+  // count from March so leap days land at the end of the shifted year
+  const int y = year - (month <= 2 ? 1 : 0);
+  const int era = y / 400;
+  const int yoe = y - era * 400;
+  const int mp = (month + 9) % 12; // March = 0 ... February = 11
+  const int doy = (153 * mp + 2) / 5 + day - 1;
+  const int doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+  const long days = (long)era * 146097 + doe - 719468;
+  return (time_t)(days * 86400L + hour * 3600L + minute * 60L + second);
+}
+
 // US: summer time from the second Sunday of March 02:00 until the first
 // Sunday of November 02:00, both local standard time. Pass standard time.
 inline bool usSummerTime(const struct tm &standard) {

@@ -15,6 +15,7 @@ class ZifraConfig {
     int utcOffsetInSeconds{2 * 3600};
     int dstMode{0}; // automatic summer time: 0 = off, 1 = EU, 2 = US
     String ntpServer{"pool.ntp.org"};
+    String otaPassword{""}; // empty = firmware updates need no password
     bool wifiActive{true};
     bool DS3231_active{false};
 
@@ -33,6 +34,7 @@ class ZifraConfig {
         json["utcOffsetInSeconds"] = utcOffsetInSeconds;
         json["dstMode"] = dstMode;
         json["ntpServer"] = ntpServer;
+        json["otaPassword"] = otaPassword;
         json["wifiActive"] = wifiActive;
         json["alarmTimeoutMinutes"] = alarmTimeoutMinutes;
 
@@ -117,6 +119,9 @@ class ZifraConfig {
 
       DynamicJsonDocument root(4096);
       deserializeJson(root, buf.get());
+      // never hand the update password to the UI - only whether one is set
+      root.remove("otaPassword");
+      root["otaPasswordSet"] = otaPassword.length() > 0;
       String json;
       serializeJson(root, json);
       return json;
@@ -153,6 +158,7 @@ class ZifraConfig {
         dstMode = 0;
       }
       setData(json, "ntpServer", ntpServer);
+      setData(json, "otaPassword", otaPassword);
       setData(json, "alarmTimeoutMinutes", alarmTimeoutMinutes);
       if (alarmTimeoutMinutes < 1) {
         alarmTimeoutMinutes = 1;
@@ -191,9 +197,18 @@ class ZifraConfig {
       }
     }
 
+    // "0,1,1,1,1,1,0" -> arr[7]. Hand-rolled: sscanf would drag the whole
+    // float-capable scanf family into the flash image.
     void createWeekdaysElements(const char *str, int *arr) {
-      sscanf(str, "%d,%d,%d,%d,%d,%d,%d", &arr[0], &arr[1], &arr[2], &arr[3],
-             &arr[4], &arr[5], &arr[6]);
+      for (int i = 0; i < 7; i++) {
+        arr[i] = (*str == '1') ? 1 : 0;
+        while (*str && *str != ',') {
+          str++;
+        }
+        if (*str == ',') {
+          str++;
+        }
+      }
     }
 
 }; // class Config

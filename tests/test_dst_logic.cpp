@@ -64,6 +64,23 @@ int main() {
   CHECK(!usSummerTime(at(2026, 11, 2, 0)));
   CHECK(!usSummerTime(at(2026, 11, 30, 12)));
 
+  CASE("utcEpochFrom matches the C library's timegm");
+  CHECK(utcEpochFrom(1970, 1, 1, 0, 0, 0) == 0);
+  CHECK(utcEpochFrom(2000, 1, 1, 0, 0, 0) == 946684800);
+  CHECK(utcEpochFrom(2024, 2, 29, 12, 0, 0) == 1709208000);
+  {
+    struct tm t {};
+    t.tm_year = 2026 - 1900; t.tm_mon = 8 - 1; t.tm_mday = 31;
+    t.tm_hour = 18; t.tm_min = 46; t.tm_sec = 27;
+    CHECK(utcEpochFrom(2026, 8, 31, 18, 46, 27) == timegm(&t));
+  }
+  {
+    struct tm t {};
+    t.tm_year = 2099 - 1900; t.tm_mon = 12 - 1; t.tm_mday = 31;
+    t.tm_hour = 23; t.tm_min = 59; t.tm_sec = 59;
+    CHECK(utcEpochFrom(2099, 12, 31, 23, 59, 59) == timegm(&t));
+  }
+
   CASE("US: other years (2025 switches on 03-09 and 11-02)");
   CHECK(!usSummerTime(at(2025, 3, 9, 1, 59)));
   CHECK(usSummerTime(at(2025, 3, 9, 2, 0)));
