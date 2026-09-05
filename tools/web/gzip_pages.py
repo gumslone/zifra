@@ -125,6 +125,9 @@ def minify(kind, raw):
 
 def to_array(name, raw, origin):
     gz = gzip.compress(raw, compresslevel=9, mtime=0)
+    # header byte 9 is the "OS" field - 0xff on macOS, 0x03 on Linux -
+    # pin it so the generated file is identical on every machine
+    gz = gz[:9] + b"\x03" + gz[10:]
     lines = []
     for i in range(0, len(gz), 12):
         lines.append("  " + ", ".join("0x%02x" % b for b in gz[i:i + 12]) + ",")
